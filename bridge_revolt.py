@@ -156,7 +156,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
                                         masquerade=persona)
                 ids.update({guild.id: msg.id})
 
-            self.bot.bridged_obe.update({f'{message.id}': ids, 'discord': {}, 'source': [message.server.id, message.author.id]})
+            ids.update({'discord': {}, 'source': [message.server.id, message.author.id]})
+            self.bot.bridged_obe.update({f'{message.id}': ids})
 
             threads = []
             ids = {}
@@ -296,8 +297,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
                                          )
                 ids.update({f'{guild.id}':msg.id})
 
-            self.bot.bridged_obe.update(
-                {f'{message.id}': ids, 'discord': ids, 'source': [message.server.id, message.author.id]})
+            self.bot.bridged_obe[f'{message.id}'].update(
+                {'discord': ids, 'source': [message.server.id, message.author.id]})
 
         @rv_commands.command(aliases=['connect','federate'])
         async def bind(self,ctx,*,room):
