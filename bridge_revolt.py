@@ -104,6 +104,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     break
             if not roomname:
                 return
+            if message.author.id==self.user.id:
+                return
             user_hash = encrypt_string(f'{message.author.id}')[:3]
             guild_hash = encrypt_string(f'{message.server.id}')[:3]
             ids = {}
