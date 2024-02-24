@@ -8,12 +8,15 @@ import json
 import traceback
 from time import gmtime, strftime
 import hashlib
+from io import BytesIO
 
 with open('config.json', 'r') as file:
     data = json.load(file)
 
 owner = data['owner']
 external_services = data['external']
+
+mentions = discord.AllowedMentions(everyone=False, roles=False, users=False)
 
 def log(type='???',status='ok',content='None'):
     time1 = strftime("%Y.%m.%d %H:%M:%S", gmtime())
@@ -156,7 +159,142 @@ class Revolt(commands.Cog,name='Revolt Support'):
                                         masquerade=persona)
                 ids.update({guild.id: msg.id})
 
-            self.bot.bridged_obe.update({f'{message.id}': ids})
+            self.bot.bridged_obe.update({f'{message.id}': ids, 'discord': {}, 'source': [message.server.id, message.author.id]})
+
+            threads = []
+            ids = {}
+            trimmed = None
+
+            for guild in self.bot.db['rooms'][roomname]:
+                guild = self.bot.get_guild(int(guild))
+                webhook = None
+                try:
+                    if f"{self.bot.db['rooms'][roomname][0]}" in list(self.bot.webhook_cache[f'{guild.id}'].keys()):
+                        webhook = self.bot.webhook_cache[f'{guild.id}'][f"{self.bot.db['rooms'][roomname][0]}"]
+                except:
+                    webhooks = await guild.webhooks()
+                    for hook in webhooks:
+                        if hook.id==self.bot.db['rooms'][roomname][0]:
+                            webhook = hook
+                            break
+
+                if not webhook:
+                    continue
+
+                components = None
+
+                if not len(message.replies)==None:
+                    ref = message.replies[0]
+                    msg_id = None
+                    obe = False
+                    obe_author = None
+                    try:
+                        try:
+                            msg_id = self.bot.bridged_obe[ref.id]['discord'][f'{guild.id}']
+                            obe_author = self.bot.bridged_obe[ref.id]['source'][1]
+                        except:
+                            for key in self.bot.bridged_obe:
+                                if ref.id in f'{self.bot.bridged_obe[key]}':
+                                    msg_id = self.bot.bridged_obe[key]['discord'][f'{guild.id}']
+                                    obe_author = self.bot.bridged_obe[key]['source'][1]
+                                    break
+                        obe = True
+                    except:
+                        for key in self.bot.bridged_external:
+                            if ref.id in f'{self.bot.bridged_external[key]}':
+                                msg_id = key
+                                break
+                    if msg_id:
+                        url = self.bot.bridged_urls[f'{msg_id}'][f'{guild.id}']
+                        ref_author = '[unknown user]'
+                        if obe:
+                            try:
+                                obe_author = self.get_user(obe_author)
+                                ref_author = obe_author.display_name or obe_author.name
+                            except:
+                                if not ref.author.id==self.user.id:
+                                    ref_author = ref.author.display_name or ref.author.name
+                        else:
+                            try:
+                                for key in self.bot.owners:
+                                    if f'{msg_id}' in self.bot.owners[key]:
+                                        obe_author = self.bot.get_user(obe_author)
+                                        ref_author = obe_author.global_name
+                                        break
+                            except:
+                                pass
+                        if not trimmed:
+                            clean_content = discord.utils.remove_markdown(ref.content)
+
+                            components = clean_content.split('<@')
+                            offset = 0
+                            if clean_content.startswith('<@'):
+                                offset = 1
+
+                            while offset < len(components):
+                                try:
+                                    userid = int(components[offset].split('>', 1)[0])
+                                except:
+                                    userid = components[offset].split('>', 1)[0]
+                                is_revolt = False
+                                user = self.bot.get_user(userid)
+                                if not user:
+                                    user = self.get_user(userid)
+                                    if not user:
+                                        offset += 1
+                                        continue
+                                    is_revolt = True
+                                else:
+                                    if is_revolt:
+                                        clean_content = clean_content.replace(f'<@{userid}>',
+                                                                              f'@{user.display_name or user.name}').replace(
+                                            f'<@!{userid}>', f'@{user.display_name or user.name}')
+                                    else:
+                                        clean_content = clean_content.replace(f'<@{userid}>',
+                                                                              f'@{user.global_name or user.name}').replace(
+                                            f'<@!{userid}>', f'@{user.global_name}')
+                                offset += 1
+                            if len(clean_content) > 80:
+                                trimmed = clean_content[:-(len(clean_content) - 77)] + '...'
+                            else:
+                                trimmed = clean_content
+                            trimmed = trimmed.replace('\n', ' ')
+                        components = discord.ui.MessageComponents(
+                            discord.ui.ActionRow(
+                                discord.ui.Button(style=discord.ButtonStyle.url,url=url,label=f'Replying to {ref_author}')
+                            ),
+                            discord.ui.ActionRow(
+                                discord.ui.Button(style=discord.ButtonStyle.red,label=trimmed,disabled=True)
+                            )
+                        )
+                    else:
+                        components = discord.ui.MessageComponents(
+                            discord.ui.ActionRow(
+                                discord.ui.Button(style=discord.ButtonStyle.gray,disabled=True,label='Replying to [unknown]')
+                            )
+                        )
+
+                files = []
+                for file in message.attachments:
+                    bytes = await file.read()
+                    files.append(discord.File(fp=BytesIO(bytes),filename=file.filename))
+
+                if not message.author.avatar:
+                    av_url = None
+                else:
+                    av_url = message.author.avatar.url
+
+                identifier = ' (' + user_hash + guild_hash + ')'
+                author = message.author.display_name or message.author.name
+
+                msg = await webhook.send(avatar_url=av_url,author=author+identifier,
+                                         content=message.content,files=files,allowed_mentions=mentions,
+                                         components=components,wait=True
+                                         )
+                ids.update({f'{guild.id}':msg.id})
+
+            self.bot.bridged_obe.update(
+                {f'{message.id}': ids, 'discord': ids, 'source': [message.server.id, message.author.id]})
 
         @rv_commands.command(aliases=['connect','federate'])
         async def bind(self,ctx,*,room):
