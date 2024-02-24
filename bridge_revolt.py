@@ -244,7 +244,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                                 except:
                                     userid = components[offset].split('>', 1)[0]
                                 is_revolt = False
-                                user = self.bot.get_user(int(userid))
+                                user = self.bot.get_user(userid)
                                 if not user:
                                     user = self.get_user(userid)
                                     if not user:
