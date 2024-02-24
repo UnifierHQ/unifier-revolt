@@ -361,6 +361,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                         await webhook.edit(self.bot.bridged_obe[message.id]['discord'][f'{guild.id}'],
                                            content=message.content)
                 except:
+                    raise
                     continue
 
         @rv_commands.command(aliases=['connect','federate'])
