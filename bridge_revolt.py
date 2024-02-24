@@ -172,6 +172,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     replies = [revolt.MessageReply(message=msg)]
                 files = []
                 for attachment in message.attachments:
+                    if (not 'audio' in attachment.content_type and not 'video' in attachment.content_type and
+                        not 'image' in attachment.content_type) or attachment.size > 25000000:
+                        continue
                     filebytes = await attachment.read()
                     files.append(revolt.File(filebytes, filename=attachment.filename))
                 if message.author.bot:
