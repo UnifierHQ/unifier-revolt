@@ -203,7 +203,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 guild = self.bot.get_guild(int(guild))
                 if not guild:
                     continue
-                if message.author.id in f'{self.bot.db["blocked"][guild.id]}' or message.server.id in f'{self.bot.db["blocked"][guild.id]}':
+                if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(self.bot.db["blocked"][f'{guild.id}']):
                     return
                 webhook = None
                 try:
@@ -408,7 +408,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 guild = self.bot.get_guild(int(guild))
                 if not guild:
                     continue
-                if message.author.id in f'{self.bot.db["blocked"][guild.id]}' or message.server.id in f'{self.bot.db["blocked"][guild.id]}':
+                if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(self.bot.db["blocked"][f'{guild.id}']):
                     return
                 webhook = None
                 try:
@@ -460,6 +460,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             for guild in self.bot.db['rooms_revolt'][roomname]:
                 if guild == message.server.id:
                     continue
+                if message.author.id in f'{self.bot.db["blocked"][guild.id]}' or message.server.id in f'{self.bot.db["blocked"][guild.id]}':
+                    return
                 guild = self.bot.revolt_client.get_server(guild)
                 ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
                 msg = await ch.fetch_message(self.bot.bridged_obe[message.id][guild.id])
@@ -469,6 +471,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 guild = self.bot.get_guild(int(guild))
                 if not guild:
                     continue
+                if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(self.bot.db["blocked"][f'{guild.id}']):
+                    return
                 webhook = None
                 try:
                     if f"{self.bot.db['rooms'][roomname][f'{guild.id}'][0]}" in list(
