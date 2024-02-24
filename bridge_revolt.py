@@ -286,7 +286,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 identifier = ' (' + user_hash + guild_hash + ')'
                 author = message.author.display_name or message.author.name
 
-                msg = await webhook.send(avatar_url=av_url,author=author+identifier,
+                msg = await webhook.send(avatar_url=av_url,username=author+identifier,
                                          content=message.content,files=files,allowed_mentions=mentions,
                                          components=components,wait=True
                                          )
