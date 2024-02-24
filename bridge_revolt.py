@@ -81,13 +81,19 @@ class Revolt(commands.Cog,name='Revolt Support'):
             self.bot = None
 
         def add_bot(self,bot):
+            """Adds a Discord bot to the Revolt client."""
             self.bot = bot
+
+        async def get_prefix(self, message: revolt.Message):
+            return self.bot.command_prefix
 
         async def on_ready(self):
             log('RVT','ok','Revolt client booted!')
 
         async def on_message(self, message):
             print(message.content)
+            if message.content.startswith(self.bot.command_prefix):
+                await self.process_commands(message)
 
         @rv_commands.command(aliases=['connect','federate'])
         async def bind(self,ctx,*,room):
