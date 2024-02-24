@@ -192,6 +192,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                             msg_id = self.bot.bridged_obe[ref.id]['discord'][f'{guild.id}']
                             obe_author = self.bot.bridged_obe[ref.id]['source'][1]
                         except:
+                            raise
                             for key in self.bot.bridged_obe:
                                 if ref.id in f'{self.bot.bridged_obe[key]}':
                                     msg_id = self.bot.bridged_obe[key]['discord'][f'{guild.id}']
