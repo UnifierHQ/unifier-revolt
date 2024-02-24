@@ -154,7 +154,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                                         masquerade=persona)
                 ids.update({guild.id: msg.id})
 
-            self.bot.bridged_oop.update({f'{message.id}': ids})
+            self.bot.bridged_obe.update({f'{message.id}': ids})
             if message.content.startswith(self.bot.command_prefix):
                 await self.process_commands(message)
 
