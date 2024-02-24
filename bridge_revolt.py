@@ -109,8 +109,6 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                         break
                 except:
                     pass
-            if not roomname:
-                return
             if message.author.id==self.user.id:
                 return
             t = time.time()
@@ -128,6 +126,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     return
             if message.content.startswith(self.bot.command_prefix):
                 return await self.process_commands(message)
+            if not roomname:
+                return
             user_hash = encrypt_string(f'{message.author.id}')[:3]
             guild_hash = encrypt_string(f'{message.server.id}')[:3]
             ids = {}
