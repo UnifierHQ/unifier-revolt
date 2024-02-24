@@ -166,11 +166,12 @@ class Revolt(commands.Cog,name='Revolt Support'):
             trimmed = None
 
             for guild in self.bot.db['rooms'][roomname]:
+                print(guild)
                 guild = self.bot.get_guild(int(guild))
                 webhook = None
                 try:
-                    if f"{self.bot.db['rooms'][roomname][0]}" in list(self.bot.webhook_cache[f'{guild.id}'].keys()):
-                        webhook = self.bot.webhook_cache[f'{guild.id}'][f"{self.bot.db['rooms'][roomname][0]}"]
+                    if f"{self.bot.db['rooms'][roomname][f'{guild.id}'][0]}" in list(self.bot.webhook_cache[f'{guild.id}'].keys()):
+                        webhook = self.bot.webhook_cache[f'{guild.id}'][f"{self.bot.db['rooms'][roomname][str(guild.id)][0]}"]
                 except:
                     webhooks = await guild.webhooks()
                     for hook in webhooks:
