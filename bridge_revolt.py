@@ -114,6 +114,34 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             user_hash = encrypt_string(f'{message.author.id}')[:3]
             guild_hash = encrypt_string(f'{message.server.id}')[:3]
             ids = {}
+
+            components = message.content.split('<@')
+            offset = 0
+            if message.content.startswith('<@'):
+                offset = 1
+
+            while offset < len(components):
+                if len(components) == 1:
+                    break
+                try:
+                    userid = int(components[offset].split('>', 1)[0])
+                except:
+                    userid = components[offset].split('>', 1)[0]
+                is_revolt = False
+                user = self.bot.get_user(userid)
+                if not user:
+                    user = self.get_user(userid)
+                    if not user:
+                        offset += 1
+                        continue
+                    is_revolt = True
+                if not is_revolt:
+                    message.content = message.content.replace(f'<@{userid}>',
+                                                              f'@{user.global_name or user.name}').replace(
+                        f'<@!{userid}>', f'@{user.global_name}')
+                offset += 1
+            revoltfriendly = message.content
+
             for guild in self.bot.db['rooms_revolt'][roomname]:
                 if guild==message.server.id:
                     continue
@@ -251,7 +279,6 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                                 except:
                                     userid = components[offset].split('>', 1)[0]
                                 is_revolt = False
-                                print(userid)
                                 user = self.bot.get_user(userid)
                                 if not user:
                                     user = self.get_user(userid)
@@ -259,15 +286,14 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                                         offset += 1
                                         continue
                                     is_revolt = True
+                                if is_revolt:
+                                    clean_content = clean_content.replace(f'<@{userid}>',
+                                                                          f'@{user.display_name or user.name}').replace(
+                                        f'<@!{userid}>', f'@{user.display_name or user.name}')
                                 else:
-                                    if is_revolt:
-                                        clean_content = clean_content.replace(f'<@{userid}>',
-                                                                              f'@{user.display_name or user.name}').replace(
-                                            f'<@!{userid}>', f'@{user.display_name or user.name}')
-                                    else:
-                                        clean_content = clean_content.replace(f'<@{userid}>',
-                                                                              f'@{user.global_name or user.name}').replace(
-                                            f'<@!{userid}>', f'@{user.global_name}')
+                                    clean_content = clean_content.replace(f'<@{userid}>',
+                                                                          f'@{user.global_name or user.name}').replace(
+                                        f'<@!{userid}>', f'@{user.global_name}')
                                 offset += 1
                             if len(clean_content) > 80:
                                 trimmed = clean_content[:-(len(clean_content) - 77)] + '...'
@@ -303,7 +329,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 author = message.author.display_name or message.author.name
 
                 msg = await webhook.send(avatar_url=av_url,username=author+identifier,
-                                         content=message.content,files=files,allowed_mentions=mentions,
+                                         content=revoltfriendly,files=files,allowed_mentions=mentions,
                                          components=components,wait=True
                                          )
                 self.bot.bridged_urls_external.update({f'{msg.id}':f'https://discord.com/channels/{webhook.guild_id}/{webhook.channel_id}/{msg.id}'})
@@ -335,6 +361,33 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 else:
                     await msg.edit(content=message.content)
 
+            components = message.content.split('<@')
+            offset = 0
+            if message.content.startswith('<@'):
+                offset = 1
+
+            while offset < len(components):
+                if len(components) == 1:
+                    break
+                try:
+                    userid = int(components[offset].split('>', 1)[0])
+                except:
+                    userid = components[offset].split('>', 1)[0]
+                is_revolt = False
+                user = self.bot.get_user(userid)
+                if not user:
+                    user = self.get_user(userid)
+                    if not user:
+                        offset += 1
+                        continue
+                    is_revolt = True
+                if not is_revolt:
+                    message.content = message.content.replace(f'<@{userid}>',
+                                                              f'@{user.global_name or user.name}').replace(
+                        f'<@!{userid}>', f'@{user.global_name}')
+                offset += 1
+            revoltfriendly = message.content
+
             for guild in self.bot.db['rooms'][roomname]:
                 guild = self.bot.get_guild(int(guild))
                 if not guild:
@@ -356,10 +409,10 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 try:
                     if message.author.bot:
                         await webhook.edit_message(self.bot.bridged_obe[message.id]['discord'][f'{guild.id}'],
-                                           content=message.content,embeds=message.embeds)
+                                           content=revoltfriendly,embeds=message.embeds)
                     else:
                         await webhook.edit_message(self.bot.bridged_obe[message.id]['discord'][f'{guild.id}'],
-                                           content=message.content)
+                                           content=revoltfriendly)
                 except:
                     continue
 
