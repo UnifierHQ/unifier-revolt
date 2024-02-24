@@ -239,11 +239,14 @@ class Revolt(commands.Cog,name='Revolt Support'):
                                 offset = 1
 
                             while offset < len(components):
+                                if len(components)==1:
+                                    break
                                 try:
                                     userid = int(components[offset].split('>', 1)[0])
                                 except:
                                     userid = components[offset].split('>', 1)[0]
                                 is_revolt = False
+                                print(userid)
                                 user = self.bot.get_user(userid)
                                 if not user:
                                     user = self.get_user(userid)
