@@ -209,7 +209,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                                 msg_id = key
                                 break
                     if msg_id:
-                        url = self.bot.bridged_urls[f'{msg_id}'][f'{guild.id}']
+                        url = self.bot.bridged_urls_external[f'{msg_id}']
                         ref_author = '[unknown user]'
                         if obe:
                             try:
@@ -295,6 +295,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                                          content=message.content,files=files,allowed_mentions=mentions,
                                          components=components,wait=True
                                          )
+                self.bot.bridged_urls_external.update({f'{msg.id}':f'https://discord.com/channels/{webhook.guild_id}/{webhook.channel_id}/{msg.id}'})
                 ids.update({f'{guild.id}':msg.id})
 
             self.bot.bridged_obe[f'{message.id}'].update(
