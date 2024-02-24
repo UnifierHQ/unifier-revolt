@@ -173,7 +173,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 except:
                     webhooks = await guild.webhooks()
                     for hook in webhooks:
-                        if hook.id==self.bot.db['rooms'][roomname][0]:
+                        if hook.id==self.bot.db['rooms'][roomname][f'{guild.id}'][0]:
                             webhook = hook
                             break
 
