@@ -163,25 +163,12 @@ class Revolt(commands.Cog,name='Revolt Support'):
             if not ctx.author.guild_permissions.manage_channels and not is_user_admin(ctx.author.id):
                 return await ctx.send('You don\'t have the necessary permissions.')
             try:
-                data = self.bot.db['rooms'][room]
+                data = self.bot.db['rooms_revolt'][room]
             except:
-                return await ctx.send(
-                    'This isn\'t a valid room. Try `main`, `pr`, `prcomments`, or `liveries` instead.')
+                return await ctx.send('This isn\'t a valid room.')
             try:
-                try:
-                    hooks = await ctx.guild.webhooks()
-                except:
-                    return await ctx.send('I cannot manage webhooks.')
-                if f'{ctx.guild.id}' in list(data.keys()):
-                    hook_ids = data[f'{ctx.guild.id}']
-                else:
-                    hook_ids = []
-                for webhook in hooks:
-                    if webhook.id in hook_ids:
-                        await webhook.delete()
-                        break
-                data.pop(f'{ctx.guild.id}')
-                self.bot.db['rooms'][room] = data
+                data.pop(f'{ctx.server.id}')
+                self.bot.db['rooms_revolt'][room] = data
                 self.bot.db.save_data()
                 await ctx.send('Unlinked channel from network!')
             except:
