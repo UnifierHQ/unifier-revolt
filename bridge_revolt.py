@@ -111,7 +111,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 guild = self.bot.revolt_client.get_server(guild)
                 ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
                 identifier = ' (' + user_hash + guild_hash + ')'
-                author = message.author.display_name
+                author = message.author.display_name or message.author.name
                 if f'{message.author.id}' in list(self.bot.db['nicknames'].keys()):
                     author = self.bot.db['nicknames'][f'{message.author.id}']
                 try:
