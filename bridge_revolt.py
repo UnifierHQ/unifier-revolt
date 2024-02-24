@@ -203,6 +203,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 guild = self.bot.get_guild(int(guild))
                 if not guild:
                     continue
+                if message.author.id in f'{self.bot.db["blocked"][guild.id]}' or message.server.id in f'{self.bot.db["blocked"][guild.id]}':
+                    return
                 webhook = None
                 try:
                     if f"{self.bot.db['rooms'][roomname][f'{guild.id}'][0]}" in list(self.bot.webhook_cache[f'{guild.id}'].keys()):
@@ -356,8 +358,19 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 return
             if message.author.id==self.user.id:
                 return
-            if message.content.startswith(self.bot.command_prefix):
-                return await self.process_commands(message)
+            t = time.time()
+            if message.author.id in f'{self.bot.db["banned"]}':
+                if t >= self.bot.db["banned"][message.author.id]:
+                    self.bot.db["banned"].pop(message.author.id)
+                    self.bot.db.save_data()
+                else:
+                    return
+            if message.server.id in f'{self.bot.db["banned"]}':
+                if t >= self.bot.db["banned"][message.server.id]:
+                    self.bot.db["banned"].pop(message.server.id)
+                    self.bot.db.save_data()
+                else:
+                    return
             for guild in self.bot.db['rooms_revolt'][roomname]:
                 if guild==message.server.id:
                     continue
@@ -395,6 +408,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 guild = self.bot.get_guild(int(guild))
                 if not guild:
                     continue
+                if message.author.id in f'{self.bot.db["blocked"][guild.id]}' or message.server.id in f'{self.bot.db["blocked"][guild.id]}':
+                    return
                 webhook = None
                 try:
                     if f"{self.bot.db['rooms'][roomname][f'{guild.id}'][0]}" in list(self.bot.webhook_cache[f'{guild.id}'].keys()):
@@ -429,8 +444,19 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 return
             if message.author.id == self.user.id:
                 return
-            if message.content.startswith(self.bot.command_prefix):
-                return await self.process_commands(message)
+            t = time.time()
+            if message.author.id in f'{self.bot.db["banned"]}':
+                if t >= self.bot.db["banned"][message.author.id]:
+                    self.bot.db["banned"].pop(message.author.id)
+                    self.bot.db.save_data()
+                else:
+                    return
+            if message.server.id in f'{self.bot.db["banned"]}':
+                if t >= self.bot.db["banned"][message.server.id]:
+                    self.bot.db["banned"].pop(message.server.id)
+                    self.bot.db.save_data()
+                else:
+                    return
             for guild in self.bot.db['rooms_revolt'][roomname]:
                 if guild == message.server.id:
                     continue
