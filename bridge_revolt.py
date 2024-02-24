@@ -97,7 +97,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @rv_commands.command(aliases=['connect','federate'])
         async def bind(self,ctx,*,room):
-            if not ctx.author.get_permissions().manage_channels and not is_user_admin(ctx.author.id):
+            if not ctx.author.get_permissions().manage_channel and not is_user_admin(ctx.author.id):
                 return await ctx.send('You don\'t have the necessary permissions.')
             if is_room_restricted(room, self.bot.db) and not is_user_admin(ctx.author.id):
                 return await ctx.send('Only Green and ItsAsheer can bind channels to restricted rooms.')
