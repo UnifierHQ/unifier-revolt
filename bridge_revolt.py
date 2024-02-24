@@ -182,7 +182,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
                 components = None
 
-                if not len(message.replies)==None:
+                if len(message.replies) > 0:
                     ref = message.replies[0]
                     msg_id = None
                     obe = False
