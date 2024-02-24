@@ -6,6 +6,7 @@ import aiohttp
 import revolt
 import json
 import traceback
+import time
 from time import gmtime, strftime
 import hashlib
 from io import BytesIO
@@ -109,6 +110,19 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 return
             if message.author.id==self.user.id:
                 return
+            t = time.time()
+            if message.author.id in f'{self.bot.db["banned"]}':
+                if t >= self.bot.db["banned"][message.author.id]:
+                    self.bot.db["banned"].pop(message.author.id)
+                    self.bot.db.save_data()
+                else:
+                    return
+            if message.server.id in f'{self.bot.db["banned"]}':
+                if t >= self.bot.db["banned"][message.server.id]:
+                    self.bot.db["banned"].pop(message.server.id)
+                    self.bot.db.save_data()
+                else:
+                    return
             if message.content.startswith(self.bot.command_prefix):
                 return await self.process_commands(message)
             user_hash = encrypt_string(f'{message.author.id}')[:3]
