@@ -193,7 +193,6 @@ class Revolt(commands.Cog,name='Revolt Support'):
                             msg_id = self.bot.bridged_obe[ref.id]['discord'][f'{guild.id}']
                             obe_author = self.bot.bridged_obe[ref.id]['source'][1]
                         except:
-                            raise
                             for key in self.bot.bridged_obe:
                                 if ref.id in f'{self.bot.bridged_obe[key]}':
                                     msg_id = self.bot.bridged_obe[key]['discord'][f'{guild.id}']
@@ -203,7 +202,6 @@ class Revolt(commands.Cog,name='Revolt Support'):
                             raise ValueError()
                         obe = True
                     except:
-                        raise
                         for key in self.bot.bridged_external:
                             if ref.id in f'{self.bot.bridged_external[key]}':
                                 msg_id = key
@@ -271,7 +269,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                             trimmed = trimmed.replace('\n', ' ')
                         components = discord.ui.MessageComponents(
                             discord.ui.ActionRow(
-                                discord.ui.Button(style=discord.ButtonStyle.url,url=url,label=f'Replying to {ref_author}')
+                                discord.ui.Button(style=discord.ButtonStyle.url,url=url,label=f'Replying to @{ref_author}')
                             ),
                             discord.ui.ActionRow(
                                 discord.ui.Button(style=discord.ButtonStyle.red,label=trimmed,disabled=True)
