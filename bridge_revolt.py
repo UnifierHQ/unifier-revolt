@@ -128,6 +128,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 return await self.process_commands(message)
             if not roomname:
                 return
+            if roomname=='pr':
+                return await ctx.send('PRs aren\'t supported in Unifier for Revolt yet.')
             user_hash = encrypt_string(f'{message.author.id}')[:3]
             guild_hash = encrypt_string(f'{message.server.id}')[:3]
             ids = {}
