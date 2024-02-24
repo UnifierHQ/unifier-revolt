@@ -110,7 +110,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             guild_hash = encrypt_string(f'{message.server.id}')[:3]
             ids = {}
             for guild in self.bot.db['rooms_revolt'][roomname]:
-                if guild==message.guild.id:
+                if guild==message.server.id:
                     continue
                 guild = self.bot.revolt_client.get_server(guild)
                 ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
