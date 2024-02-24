@@ -353,12 +353,15 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 if not webhook:
                     continue
 
-                if message.author.bot:
-                    await webhook.edit(self.bot.bridged_obe[message.id]['discord'][guild.id],
-                                       content=message.content,embeds=message.embeds)
-                else:
-                    await webhook.edit(self.bot.bridged_obe[message.id]['discord'][guild.id],
-                                       content=message.content)
+                try:
+                    if message.author.bot:
+                        await webhook.edit(self.bot.bridged_obe[message.id]['discord'][guild.id],
+                                           content=message.content,embeds=message.embeds)
+                    else:
+                        await webhook.edit(self.bot.bridged_obe[message.id]['discord'][guild.id],
+                                           content=message.content)
+                except:
+                    continue
 
         @rv_commands.command(aliases=['connect','federate'])
         async def bind(self,ctx,*,room):
