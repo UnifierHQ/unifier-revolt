@@ -188,7 +188,10 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 self.bot.revolt_client = self.Client(session, data['revolt_token'])
                 self.bot.revolt_client.add_bot(self.bot)
                 log('RVT','info','Booting Revolt client...')
-                await self.bot.revolt_client.start()
+                try:
+                    await self.bot.revolt_client.start()
+                except RuntimeError:
+                    pass
 
     @commands.command(hidden=True)
     async def send_to_revolt(self,ctx,*,message):
@@ -196,7 +199,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             return
         server = self.bot.revolt_client.get_server('01HDS71G78AT18B9DEW3K6KXST')
         channel = server.get_channel('01HDS71G78TTV3J3HMX3FB180Q')
-        persona = revolt.Masquerade(name="green. (discord)",avatar=ctx.author.avatar.url)
+        persona = revolt.Masquerade(name="Unifier (Discord)")
         await channel.send(message,masquerade=persona)
 
 def setup(bot):
