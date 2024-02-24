@@ -121,21 +121,14 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 offset = 1
 
             while offset < len(components):
-                if len(components) == 1:
+                if len(components) == 1 and offset == 0:
                     break
                 try:
                     userid = int(components[offset].split('>', 1)[0])
                 except:
                     userid = components[offset].split('>', 1)[0]
-                is_revolt = False
                 user = self.bot.get_user(userid)
-                if not user:
-                    user = self.get_user(userid)
-                    if not user:
-                        offset += 1
-                        continue
-                    is_revolt = True
-                if not is_revolt:
+                if user:
                     message.content = message.content.replace(f'<@{userid}>',
                                                               f'@{user.global_name or user.name}').replace(
                         f'<@!{userid}>', f'@{user.global_name}')
@@ -367,21 +360,14 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 offset = 1
 
             while offset < len(components):
-                if len(components) == 1:
+                if len(components) == 1 and offset==0:
                     break
                 try:
                     userid = int(components[offset].split('>', 1)[0])
                 except:
                     userid = components[offset].split('>', 1)[0]
-                is_revolt = False
                 user = self.bot.get_user(userid)
-                if not user:
-                    user = self.get_user(userid)
-                    if not user:
-                        offset += 1
-                        continue
-                    is_revolt = True
-                if not is_revolt:
+                if user:
                     message.content = message.content.replace(f'<@{userid}>',
                                                               f'@{user.global_name or user.name}').replace(
                         f'<@!{userid}>', f'@{user.global_name}')
