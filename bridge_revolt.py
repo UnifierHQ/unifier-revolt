@@ -199,6 +199,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                                     break
                         obe = True
                     except:
+                        raise
                         for key in self.bot.bridged_external:
                             if ref.id in f'{self.bot.bridged_external[key]}':
                                 msg_id = key
