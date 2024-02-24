@@ -104,8 +104,10 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     break
             if not roomname:
                 return
-            if message.author.id==self.user.id or message.content.startswith(self.bot.command_prefix):
+            if message.author.id==self.user.id:
                 return
+            if message.content.startswith(self.bot.command_prefix):
+                return await self.process_commands(message)
             user_hash = encrypt_string(f'{message.author.id}')[:3]
             guild_hash = encrypt_string(f'{message.server.id}')[:3]
             ids = {}
@@ -155,8 +157,6 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 ids.update({guild.id: msg.id})
 
             self.bot.bridged_obe.update({f'{message.id}': ids})
-            if message.content.startswith(self.bot.command_prefix):
-                await self.process_commands(message)
 
         @rv_commands.command(aliases=['connect','federate'])
         async def bind(self,ctx,*,room):
