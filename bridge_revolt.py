@@ -355,10 +355,10 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
                 try:
                     if message.author.bot:
-                        await webhook.edit(self.bot.bridged_obe[message.id]['discord'][f'{guild.id}'],
+                        await webhook.edit_message(self.bot.bridged_obe[message.id]['discord'][f'{guild.id}'],
                                            content=message.content,embeds=message.embeds)
                     else:
-                        await webhook.edit(self.bot.bridged_obe[message.id]['discord'][f'{guild.id}'],
+                        await webhook.edit_message(self.bot.bridged_obe[message.id]['discord'][f'{guild.id}'],
                                            content=message.content)
                 except:
                     raise
