@@ -312,7 +312,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             self.bot.bridged_obe[f'{message.id}'].update(
                 {'discord': ids, 'source': [message.server.id, message.author.id]})
 
-        async def on_message_edit(self, before, message):
+        async def on_message_update(self, before, message):
             roomname = None
             for key in self.bot.db['rooms_revolt']:
                 if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
