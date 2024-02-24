@@ -329,7 +329,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     continue
                 guild = self.bot.revolt_client.get_server(guild)
                 ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
-                msg = await ch.fetch_message(self.bot.bridged_obe[message.id][message.server.id])
+                msg = await ch.fetch_message(self.bot.bridged_obe[message.id][guild.id])
                 if message.author.bot:
                     await msg.edit(content=message.content, embeds=message.embeds)
                 else:
