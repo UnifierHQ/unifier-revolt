@@ -11,8 +11,10 @@ with open('config.json', 'r') as file:
 owner = data['owner']
 external_services = data['external']
 
-class Revolt(commands.Cog):
-    """"""
+class Revolt(commands.Cog,name='Revolt Support'):
+    """An extension that enables Unifier to support Revolt. Manages Revolt instance, as well as Revolt-to-Revolt and Revolt-to-Discord bridging.
+
+    Developed by Green"""
     def __init__(self,bot):
         self.bot = bot
         if not 'revolt' in external_services:
@@ -23,11 +25,20 @@ class Revolt(commands.Cog):
             self.revolt_client_task = asyncio.create_task(self.revolt_boot())
 
     class Client(revolt.Client):
+        async def on_ready(self):
+            print('Revolt client booted!')
+
         async def on_message(self, message):
             print(message.content)
 
     async def revolt_boot(self):
         if self.bot.revolt_client is None:
+            print('Syncing Revolt rooms...')
+            for key in self.bot.db['rooms']:
+                if not key in list(self.bot.db['rooms_revolt'].keys()):
+                    self.bot.db['rooms_revolt'].update({key: {}})
+                    print('Synced room '+key)
+            self.bot.db.save_data()
             async with aiohttp.ClientSession() as session:
                 self.bot.revolt_session = session
                 self.bot.revolt_client = self.Client(session, data['revolt_token'])
