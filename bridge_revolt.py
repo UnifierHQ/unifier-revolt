@@ -103,9 +103,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         async def on_message(self, message):
             roomname = None
             for key in self.bot.db['rooms_revolt']:
-                if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
-                    roomname = key
-                    break
+                try:
+                    if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
+                        roomname = key
+                        break
+                except:
+                    pass
             if not roomname:
                 return
             if message.author.id==self.user.id:
