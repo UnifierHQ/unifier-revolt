@@ -7,6 +7,7 @@ import revolt
 import json
 import traceback
 from time import gmtime, strftime
+import hashlib
 
 with open('config.json', 'r') as file:
     data = json.load(file)
@@ -27,6 +28,11 @@ def log(type='???',status='ok',content='None'):
     else:
         raise ValueError('Invalid status type provided')
     print(f'[{type} | {time1} | {status}] {content}')
+
+def encrypt_string(hash_string):
+    sha_signature = \
+        hashlib.sha256(hash_string.encode()).hexdigest()
+    return sha_signature
 
 def is_user_admin(id):
     try:
@@ -91,7 +97,60 @@ class Revolt(commands.Cog,name='Revolt Support'):
             log('RVT','ok','Revolt client booted!')
 
         async def on_message(self, message):
-            print(message.content)
+            roomname = None
+            for key in self.bot.db['rooms_revolt']:
+                if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
+                    roomname = key
+                    break
+            if not roomname:
+                return
+            user_hash = encrypt_string(f'{message.author.id}')[:3]
+            guild_hash = encrypt_string(f'{message.server.id}')[:3]
+            ids = {}
+            for guild in self.bot.db['rooms_revolt'][roomname]:
+                guild = self.bot.revolt_client.get_server(guild)
+                ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
+                identifier = ' (' + user_hash + guild_hash + ')'
+                author = message.author.display_name
+                if f'{message.author.id}' in list(self.bot.db['nicknames'].keys()):
+                    author = self.bot.db['nicknames'][f'{message.author.id}']
+                try:
+                    persona = revolt.Masquerade(name=author + identifier, avatar=message.author.avatar.url)
+                except:
+                    persona = revolt.Masquerade(name=author + identifier, avatar=None)
+                msg_data = None
+                if len(message.replies) > 0:
+                    ref = message.replies[0]
+                    try:
+                        try:
+                            msg_data = self.bot.bridged_oob[f'{ref.id}'][guild.id]
+                        except:
+                            msg_data = self.bot.bridged_external[f'{ref.id}']['revolt']
+                    except:
+                        for key in self.bot.bridged_external:
+                            if f'{ref.id}' in str(self.bot.bridged_external[key]['revolt']):
+                                msg_data = self.bot.bridged_external[f'{key}']['revolt']
+                                break
+                if not msg_data:
+                    replies = []
+                else:
+                    msg = await ch.fetch_message(msg_data[guild.id])
+                    replies = [revolt.MessageReply(message=msg)]
+                files = []
+                for attachment in message.attachments:
+                    filebytes = await attachment.read()
+                    files.append(revolt.File(filebytes, filename=attachment.filename))
+                if message.author.bot:
+                    msg = await ch.send(
+                        content=message.content, embeds=message.embeds, attachments=files, replies=replies,
+                        masquerade=persona
+                    )
+                else:
+                    msg = await ch.send(content=message.content, attachments=files, replies=replies,
+                                        masquerade=persona)
+                ids.update({guild.id: msg.id})
+
+            self.bot.bridged_oop.update({f'{message.id}': ids})
             if message.content.startswith(self.bot.command_prefix):
                 await self.process_commands(message)
 
