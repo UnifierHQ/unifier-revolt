@@ -361,7 +361,51 @@ class Revolt(commands.Cog,name='Revolt Support'):
                         await webhook.edit_message(self.bot.bridged_obe[message.id]['discord'][f'{guild.id}'],
                                            content=message.content)
                 except:
-                    raise
+                    continue
+
+        async def on_message_delete(self, message):
+            roomname = None
+            for key in self.bot.db['rooms_revolt']:
+                if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
+                    roomname = key
+                    break
+            if not roomname:
+                return
+            if message.author.id == self.user.id:
+                return
+            if message.content.startswith(self.bot.command_prefix):
+                return await self.process_commands(message)
+            for guild in self.bot.db['rooms_revolt'][roomname]:
+                if guild == message.server.id:
+                    continue
+                guild = self.bot.revolt_client.get_server(guild)
+                ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
+                msg = await ch.fetch_message(self.bot.bridged_obe[message.id][guild.id])
+                await msg.delete()
+
+            for guild in self.bot.db['rooms'][roomname]:
+                guild = self.bot.get_guild(int(guild))
+                if not guild:
+                    continue
+                webhook = None
+                try:
+                    if f"{self.bot.db['rooms'][roomname][f'{guild.id}'][0]}" in list(
+                            self.bot.webhook_cache[f'{guild.id}'].keys()):
+                        webhook = self.bot.webhook_cache[f'{guild.id}'][
+                            f"{self.bot.db['rooms'][roomname][str(guild.id)][0]}"]
+                except:
+                    webhooks = await guild.webhooks()
+                    for hook in webhooks:
+                        if hook.id == self.bot.db['rooms'][roomname][f'{guild.id}'][0]:
+                            webhook = hook
+                            break
+
+                if not webhook:
+                    continue
+
+                try:
+                    await webhook.delete_message(self.bot.bridged_obe[message.id]['discord'][f'{guild.id}'])
+                except:
                     continue
 
         @rv_commands.command(aliases=['connect','federate'])
