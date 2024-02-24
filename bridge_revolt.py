@@ -229,12 +229,11 @@ class Revolt(commands.Cog,name='Revolt Support'):
                         else:
                             try:
                                 for key in self.bot.owners:
-                                    if f'{msg_id}' in self.bot.owners[key]:
+                                    if f'{msg_id}' in f'{self.bot.owners[key]}':
                                         obe_author = self.bot.get_user(int(key))
                                         ref_author = obe_author.global_name
                                         break
                             except:
-                                raise
                                 pass
                         if not trimmed:
                             clean_content = discord.utils.remove_markdown(ref.content)
