@@ -133,7 +133,6 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     try:
                         msg_data = self.bot.bridged_obe[f'{ref.id}'][guild.id]
                     except:
-                        raise
                         for key in self.bot.bridged_external:
                             if f'{ref.id}' in str(self.bot.bridged_external[key]['revolt']):
                                 msg_data = self.bot.bridged_external[f'{key}']['revolt']
