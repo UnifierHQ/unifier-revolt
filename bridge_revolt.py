@@ -140,9 +140,11 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     resp = await self.wait_for("message", check=check, timeout=60.0)
                 except:
                     return await ctx.send('Timed out.')
+                if not resp.lower()=='i agree':
+                    return await ctx.send('Cancelled.')
                 data = self.bot.db['rooms_revolt'][room]
                 guild = [ctx.channel.id]
-                data.update({f'{ctx.guild.id}': guild})
+                data.update({f'{ctx.server.id}': guild})
                 self.bot.db['rooms_revolt'][room] = data
                 self.bot.db.save_data()
                 await ctx.send('Linked channel with network!')
