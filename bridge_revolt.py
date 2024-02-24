@@ -312,6 +312,54 @@ class Revolt(commands.Cog,name='Revolt Support'):
             self.bot.bridged_obe[f'{message.id}'].update(
                 {'discord': ids, 'source': [message.server.id, message.author.id]})
 
+        async def on_message_edit(self, before, message):
+            roomname = None
+            for key in self.bot.db['rooms_revolt']:
+                if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
+                    roomname = key
+                    break
+            if not roomname:
+                return
+            if message.author.id==self.user.id:
+                return
+            if message.content.startswith(self.bot.command_prefix):
+                return await self.process_commands(message)
+            for guild in self.bot.db['rooms_revolt'][roomname]:
+                if guild==message.server.id:
+                    continue
+                guild = self.bot.revolt_client.get_server(guild)
+                ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
+                msg = await ch.fetch_message(self.bot.bridged_obe[message.id][message.server.id])
+                if message.author.bot:
+                    await msg.edit(content=message.content, embeds=message.embeds)
+                else:
+                    await msg.edit(content=message.content)
+
+            for guild in self.bot.db['rooms'][roomname]:
+                guild = self.bot.get_guild(int(guild))
+                if not guild:
+                    continue
+                webhook = None
+                try:
+                    if f"{self.bot.db['rooms'][roomname][f'{guild.id}'][0]}" in list(self.bot.webhook_cache[f'{guild.id}'].keys()):
+                        webhook = self.bot.webhook_cache[f'{guild.id}'][f"{self.bot.db['rooms'][roomname][str(guild.id)][0]}"]
+                except:
+                    webhooks = await guild.webhooks()
+                    for hook in webhooks:
+                        if hook.id==self.bot.db['rooms'][roomname][f'{guild.id}'][0]:
+                            webhook = hook
+                            break
+
+                if not webhook:
+                    continue
+
+                if message.author.bot:
+                    await webhook.edit(self.bot.bridged_obe[message.id]['discord'][guild.id],
+                                       content=message.content,embeds=message.embeds)
+                else:
+                    await webhook.edit(self.bot.bridged_obe[message.id]['discord'][guild.id],
+                                       content=message.content)
+
         @rv_commands.command(aliases=['connect','federate'])
         async def bind(self,ctx,*,room):
             if not ctx.author.get_permissions().manage_channel and not is_user_admin(ctx.author.id):
