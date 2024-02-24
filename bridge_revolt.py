@@ -104,7 +104,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     break
             if not roomname:
                 return
-            if message.author.id==self.user.id:
+            if message.author.id==self.user.id or message.content.startswith(self.bot.command_prefix):
                 return
             user_hash = encrypt_string(f'{message.author.id}')[:3]
             guild_hash = encrypt_string(f'{message.server.id}')[:3]
