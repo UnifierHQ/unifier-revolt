@@ -87,7 +87,6 @@ class Revolt(commands.Cog,name='Revolt Support'):
             log('RVT','ok','Revolt client booted!')
 
         async def on_message(self, message):
-            print(message.author.get_permissions().manage_channel)
             print(message.content)
 
         @rv_commands.command(aliases=['connect','federate'])
@@ -114,7 +113,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                         'Your server is already linked to this room.\n**Accidentally deleted the webhook?** `u!unlink` it then `u!link` it back.')
                 index = 0
                 text = ''
-                if len(super.db()['rules'][room]) == 0:
+                if len(self.bot.db()['rules'][room]) == 0:
                     text = f'No rules exist yet for this room! For now, follow the main room\'s rules.\nYou can always view rules if any get added using `u!rules {room}`.'
                 else:
                     for rule in self.bot.db['rules'][room]:
