@@ -131,7 +131,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 if len(message.replies) > 0:
                     ref = message.replies[0]
                     try:
-                        msg_data = self.bot.bridged_oob[f'{ref.id}'][guild.id]
+                        msg_data = self.bot.bridged_obe[f'{ref.id}'][guild.id]
                     except:
                         raise
                         for key in self.bot.bridged_external:
