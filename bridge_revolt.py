@@ -140,6 +140,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 if not msg_data:
                     replies = []
                 else:
+                    print(msg_data)
                     msg = await ch.fetch_message(msg_data[guild.id])
                     replies = [revolt.MessageReply(message=msg)]
                 files = []
