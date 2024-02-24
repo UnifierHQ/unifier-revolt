@@ -68,7 +68,7 @@ def is_room_locked(room,db):
         traceback.print_exc()
         return False
 
-class Revolt(commands.Cog,name='Revolt Support'):
+class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Support'):
     """An extension that enables Unifier to support Revolt. Manages Revolt instance, as well as Revolt-to-Revolt and Revolt-to-Discord bridging.
 
     Developed by Green"""
