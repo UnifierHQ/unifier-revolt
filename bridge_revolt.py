@@ -135,13 +135,12 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     except:
                         for key in self.bot.bridged_external:
                             if f'{ref.id}' in str(self.bot.bridged_external[key]['revolt']):
-                                msg_data = self.bot.bridged_external[f'{key}']['revolt']
+                                msg_data = self.bot.bridged_external[f'{key}']['revolt'][guild.id]
                                 break
                 if not msg_data:
                     replies = []
                 else:
-                    print(msg_data)
-                    msg = await ch.fetch_message(msg_data[guild.id])
+                    msg = await ch.fetch_message(msg_data)
                     replies = [revolt.MessageReply(message=msg)]
                 files = []
                 for attachment in message.attachments:
