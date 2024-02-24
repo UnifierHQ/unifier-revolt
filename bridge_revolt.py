@@ -208,8 +208,11 @@ class Revolt(commands.Cog,name='Revolt Support'):
                             if ref.id in f'{self.bot.bridged_external[key]}':
                                 msg_id = key
                                 break
-                    if msg_id:
+                    try:
                         url = self.bot.bridged_urls_external[f'{msg_id}']
+                    except:
+                        msg_id = None
+                    if msg_id:
                         ref_author = '[unknown user]'
                         if obe:
                             try:
