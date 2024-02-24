@@ -132,6 +132,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 if guild==message.server.id:
                     continue
                 guild = self.bot.revolt_client.get_server(guild)
+                try:
+                    if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(
+                            self.bot.db["blocked"][f'{guild.id}']):
+                        return
+                except:
+                    pass
                 ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
                 identifier = ' (' + user_hash + guild_hash + ')'
                 author = message.author.display_name or message.author.name
@@ -203,8 +209,11 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 guild = self.bot.get_guild(int(guild))
                 if not guild:
                     continue
-                if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(self.bot.db["blocked"][f'{guild.id}']):
-                    return
+                try:
+                    if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(self.bot.db["blocked"][f'{guild.id}']):
+                        return
+                except:
+                    pass
                 webhook = None
                 try:
                     if f"{self.bot.db['rooms'][roomname][f'{guild.id}'][0]}" in list(self.bot.webhook_cache[f'{guild.id}'].keys()):
@@ -374,7 +383,16 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             for guild in self.bot.db['rooms_revolt'][roomname]:
                 if guild==message.server.id:
                     continue
-                guild = self.bot.revolt_client.get_server(guild)
+                try:
+                    guild = self.bot.revolt_client.get_server(guild)
+                except:
+                    continue
+                try:
+                    if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(
+                            self.bot.db["blocked"][f'{guild.id}']):
+                        return
+                except:
+                    pass
                 ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
                 msg = await ch.fetch_message(self.bot.bridged_obe[message.id][guild.id])
                 if message.author.bot:
@@ -408,8 +426,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 guild = self.bot.get_guild(int(guild))
                 if not guild:
                     continue
-                if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(self.bot.db["blocked"][f'{guild.id}']):
-                    return
+                try:
+                    if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(
+                            self.bot.db["blocked"][f'{guild.id}']):
+                        return
+                except:
+                    pass
                 webhook = None
                 try:
                     if f"{self.bot.db['rooms'][roomname][f'{guild.id}'][0]}" in list(self.bot.webhook_cache[f'{guild.id}'].keys()):
@@ -460,9 +482,15 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             for guild in self.bot.db['rooms_revolt'][roomname]:
                 if guild == message.server.id:
                     continue
-                if message.author.id in f'{self.bot.db["blocked"][guild.id]}' or message.server.id in f'{self.bot.db["blocked"][guild.id]}':
-                    return
-                guild = self.bot.revolt_client.get_server(guild)
+                try:
+                    guild = self.bot.revolt_client.get_server(guild)
+                except:
+                    continue
+                try:
+                    if message.author.id in f'{self.bot.db["blocked"][guild.id]}' or message.server.id in f'{self.bot.db["blocked"][guild.id]}':
+                        return
+                except:
+                    pass
                 ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
                 msg = await ch.fetch_message(self.bot.bridged_obe[message.id][guild.id])
                 await msg.delete()
@@ -471,8 +499,11 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 guild = self.bot.get_guild(int(guild))
                 if not guild:
                     continue
-                if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(self.bot.db["blocked"][f'{guild.id}']):
-                    return
+                try:
+                    if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(self.bot.db["blocked"][f'{guild.id}']):
+                        return
+                except:
+                    pass
                 webhook = None
                 try:
                     if f"{self.bot.db['rooms'][roomname][f'{guild.id}'][0]}" in list(
