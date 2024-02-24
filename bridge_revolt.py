@@ -160,7 +160,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
         async def unbind(self, ctx, *, room=''):
             if room == '':
                 return await ctx.send('You must specify the room to unbind from.')
-            if not ctx.author.guild_permissions.manage_channels and not is_user_admin(ctx.author.id):
+            if not ctx.author.get_permissions().manage_channel and not is_user_admin(ctx.author.id):
                 return await ctx.send('You don\'t have the necessary permissions.')
             try:
                 data = self.bot.db['rooms_revolt'][room]
