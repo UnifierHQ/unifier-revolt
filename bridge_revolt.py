@@ -87,7 +87,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             log('RVT','ok','Revolt client booted!')
 
         async def on_message(self, message):
-            print(message.author.get_permissions().__dict__)
+            print(message.author.get_permissions().manage_channel)
             print(message.content)
 
         @rv_commands.command(aliases=['connect','federate'])
