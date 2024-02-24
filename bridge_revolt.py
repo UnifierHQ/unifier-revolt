@@ -234,6 +234,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                                         ref_author = obe_author.global_name
                                         break
                             except:
+                                raise
                                 pass
                         if not trimmed:
                             clean_content = discord.utils.remove_markdown(ref.content)
