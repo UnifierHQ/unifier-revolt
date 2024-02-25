@@ -683,14 +683,11 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                         current_color = 'Inherit from role'
                         embed_color = ctx.author.roles[0].colour.value
                     else:
-                        embed_color = ast.literal_eval('0x' + current_color)
+                        embed_color = current_color
                 except:
                     current_color = 'Default'
                     embed_color = self.bot.colors.unifier
-                embed_color = f'{embed_color}'.replace('0x','',1)
-                print(embed_color)
                 embed_color = 'rgb'+str(tuple(int(embed_color[i:i + 2], 16) for i in (0, 2, 4)))
-                print(embed_color)
                 embed = revolt.SendableEmbed(title='Your Revolt color', description=current_color, colour=embed_color)
                 await ctx.send(embeds=[embed])
             elif color == 'inherit':
