@@ -330,12 +330,21 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                             else:
                                 trimmed = clean_content
                             trimmed = trimmed.replace('\n', ' ')
+                        if len(trimmed) > 0:
+                            button = discord.ui.Button(
+                                style=discord.ButtonStyle.red,label=trimmed,disabled=True
+                            )
+                        else:
+                            button = discord.ui.Button(
+                                style=discord.ButtonStyle.red,
+                                label=f'x{len(ref.embeds) + len(ref.attachments)}',
+                                emoji='\U0001F3DE', disabled=True
+                            )
                         components = discord.ui.MessageComponents(
                             discord.ui.ActionRow(
                                 discord.ui.Button(style=discord.ButtonStyle.url,url=url,label=f'Replying to @{ref_author}')
-                            ),
-                            discord.ui.ActionRow(
-                                discord.ui.Button(style=discord.ButtonStyle.red,label=trimmed,disabled=True)
+                            ), discord.ui.ActionRow(
+                                button
                             )
                         )
                     else:
