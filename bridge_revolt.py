@@ -687,8 +687,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 except:
                     current_color = 'Default'
                     embed_color = self.bot.colors.unifier
+                embed_color = f'{embed_color}'.replace('0x','#',1)
                 embed = revolt.SendableEmbed(title='Your Revolt color', description=current_color, colour=embed_color)
-                await ctx.send(embed=embed)
+                await ctx.send(embeds=[embed])
             elif color == 'inherit':
                 self.bot.db['colors'].update({f'{ctx.author.id}': 'inherit'})
                 self.bot.db.save_data()
