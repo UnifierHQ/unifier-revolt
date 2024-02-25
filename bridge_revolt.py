@@ -717,6 +717,10 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 self.bot.db.save_data()
                 await ctx.send('Your Revolt messages will now inherit the custom color.')
 
+        @rv_commands.command()
+        async def about(self,ctx):
+            await ctx.send('**Unifier for Revolt**\nVersion 1.0.0, made by Green')
+
     async def revolt_boot(self):
         if self.bot.revolt_client is None:
             log('DAT','info','Syncing Revolt rooms...')
