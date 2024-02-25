@@ -163,10 +163,18 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 if message.author.id in list(self.bot.db['colors'].keys()):
                     color = self.bot.db['colors'][message.author.id]
                     if color == 'inherit':
-                        rvtcolor = message.author.roles[0].colour
+                        try:
+                            color = message.author.roles[len(message.author.roles)-1].colour.replace('#','')
+                            rgbtuple = tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
+                            rvtcolor = f'rgb{rgbtuple}'
+                        except:
+                            pass
                     else:
-                        rgbtuple = tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
-                        rvtcolor = f'rgb{rgbtuple}'
+                        try:
+                            rgbtuple = tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
+                            rvtcolor = f'rgb{rgbtuple}'
+                        except:
+                            pass
                 try:
                     persona = revolt.Masquerade(name=author + identifier, avatar=message.author.avatar.url, colour=rvtcolor)
                 except:
@@ -687,7 +695,10 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 except:
                     current_color = 'Default'
                     embed_color = self.bot.colors.unifier
-                embed_color = 'rgb'+str(tuple(int(embed_color[i:i + 2], 16) for i in (0, 2, 4)))
+                try:
+                    embed_color = 'rgb'+str(tuple(int(embed_color[i:i + 2], 16) for i in (0, 2, 4)))
+                except:
+                    embed_color = None
                 embed = revolt.SendableEmbed(title='Your Revolt color', description=current_color, colour=embed_color)
                 await ctx.send(embeds=[embed])
             elif color == 'inherit':
