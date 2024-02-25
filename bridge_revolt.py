@@ -681,7 +681,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                         embed_color = self.bot.colors.unifier
                     elif current_color == 'inherit':
                         current_color = 'Inherit from role'
-                        embed_color = ctx.author.roles[len(ctx.author.roles)-1].colour
+                        embed_color = ctx.author.roles[len(ctx.author.roles)-1].colour.replace('#','')
                     else:
                         embed_color = current_color
                 except:
