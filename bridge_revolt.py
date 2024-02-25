@@ -1,3 +1,5 @@
+import ast
+
 import discord
 from discord.ext import commands
 from revolt.ext import commands as rv_commands
@@ -140,6 +142,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     guild = self.bot.revolt_client.get_server(guild)
                 except:
                     continue
+                if guild.id in f'{self.bot.db["banned"]}':
+                    if t >= self.bot.db["banned"][guild.id]:
+                        self.bot.db["banned"].pop(guild.id)
+                        self.bot.db.save_data()
+                    else:
+                        continue
                 try:
                     if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(
                             self.bot.db["blocked"][f'{guild.id}']):
@@ -151,10 +159,18 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 author = message.author.display_name or message.author.name
                 if f'{message.author.id}' in list(self.bot.db['nicknames'].keys()):
                     author = self.bot.db['nicknames'][f'{message.author.id}']
+                rvtcolor = None
+                if message.author.id in list(self.bot.db['colors'].keys()):
+                    color = self.bot.db['colors'][message.author.id]
+                    if color == 'inherit':
+                        rvtcolor = message.author.roles[0].colour
+                    else:
+                        rgbtuple = tuple(int(color[i:i + 2], 16) for i in (0, 2, 4))
+                        rvtcolor = f'rgb{rgbtuple}'
                 try:
-                    persona = revolt.Masquerade(name=author + identifier, avatar=message.author.avatar.url)
+                    persona = revolt.Masquerade(name=author + identifier, avatar=message.author.avatar.url, colour=rvtcolor)
                 except:
-                    persona = revolt.Masquerade(name=author + identifier, avatar=None)
+                    persona = revolt.Masquerade(name=author + identifier, avatar=None, colour=rvtcolor)
                 msg_data = None
                 if len(message.replies) > 0:
                     ref = message.replies[0]
@@ -220,6 +236,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 guild = self.bot.get_guild(int(guild))
                 if not guild:
                     continue
+                if f'{guild.id}' in f'{self.bot.db["banned"]}':
+                    if t >= self.bot.db["banned"][f'{guild.id}']:
+                        self.bot.db["banned"].pop(f'{guild.id}')
+                        self.bot.db.save_data()
+                    else:
+                        continue
                 try:
                     if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(self.bot.db["blocked"][f'{guild.id}']):
                         continue
@@ -407,6 +429,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     guild = self.bot.revolt_client.get_server(guild)
                 except:
                     continue
+                if guild.id in f'{self.bot.db["banned"]}':
+                    if t >= self.bot.db["banned"][guild.id]:
+                        self.bot.db["banned"].pop(guild.id)
+                        self.bot.db.save_data()
+                    else:
+                        continue
                 try:
                     if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(
                             self.bot.db["blocked"][f'{guild.id}']):
@@ -446,6 +474,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 guild = self.bot.get_guild(int(guild))
                 if not guild:
                     continue
+                if f'{guild.id}' in f'{self.bot.db["banned"]}':
+                    if t >= self.bot.db["banned"][f'{guild.id}']:
+                        self.bot.db["banned"].pop(f'{guild.id}')
+                        self.bot.db.save_data()
+                    else:
+                        continue
                 try:
                     if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(
                             self.bot.db["blocked"][f'{guild.id}']):
@@ -506,6 +540,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     guild = self.bot.revolt_client.get_server(guild)
                 except:
                     continue
+                if guild.id in f'{self.bot.db["banned"]}':
+                    if t >= self.bot.db["banned"][guild.id]:
+                        self.bot.db["banned"].pop(guild.id)
+                        self.bot.db.save_data()
+                    else:
+                        continue
                 try:
                     if message.author.id in f'{self.bot.db["blocked"][guild.id]}' or message.server.id in f'{self.bot.db["blocked"][guild.id]}':
                         continue
@@ -519,6 +559,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 guild = self.bot.get_guild(int(guild))
                 if not guild:
                     continue
+                if f'{guild.id}' in f'{self.bot.db["banned"]}':
+                    if t >= self.bot.db["banned"][f'{guild.id}']:
+                        self.bot.db["banned"].pop(f'{guild.id}')
+                        self.bot.db.save_data()
+                    else:
+                        continue
                 try:
                     if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(self.bot.db["blocked"][f'{guild.id}']):
                         continue
@@ -624,6 +670,37 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             except:
                 await ctx.send('Something went wrong - check my permissions.')
                 raise
+
+        @rv_commands.command(aliases=['colour'])
+        async def color(self, ctx, *, color=''):
+            if color == '':
+                try:
+                    current_color = self.bot.db['colors'][f'{ctx.author.id}']
+                    if current_color == '':
+                        current_color = 'Default'
+                        embed_color = self.bot.colors.unifier
+                    elif current_color == 'inherit':
+                        current_color = 'Inherit from role'
+                        embed_color = ctx.author.color.value
+                    else:
+                        embed_color = ast.literal_eval('0x' + current_color)
+                except:
+                    current_color = 'Default'
+                    embed_color = self.bot.colors.unifier
+                embed = discord.Embed(title='Your Revolt color', description=current_color, color=embed_color)
+                await ctx.send(embed=embed)
+            elif color == 'inherit':
+                self.bot.db['colors'].update({f'{ctx.author.id}': 'inherit'})
+                self.bot.db.save_data()
+                await ctx.send('Your Revolt messages will now inherit your Revolt role color.')
+            else:
+                try:
+                    tuple(int(color.replace('#', '', 1)[i:i + 2], 16) for i in (0, 2, 4))
+                except:
+                    return await ctx.send('Invalid hex code!')
+                self.bot.db['colors'].update({f'{ctx.author.id}': color})
+                self.bot.db.save_data()
+                await ctx.send('Your Revolt messages will now inherit the custom color.')
 
     async def revolt_boot(self):
         if self.bot.revolt_client is None:
