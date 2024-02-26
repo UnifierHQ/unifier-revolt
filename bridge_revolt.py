@@ -1,5 +1,3 @@
-import ast
-
 import discord
 from discord.ext import commands
 from revolt.ext import commands as rv_commands
@@ -12,12 +10,17 @@ import time
 from time import gmtime, strftime
 import hashlib
 from io import BytesIO
+import random
+import string
 
 with open('config.json', 'r') as file:
     data = json.load(file)
 
 owner = data['owner']
 external_services = data['external']
+allow_prs = data["allow_prs"]
+pr_room_index = data["pr_room_index"] # If this is 0, then the oldest room will be used as the PR room.
+pr_ref_room_index = data["pr_ref_room_index"]
 
 mentions = discord.AllowedMentions(everyone=False, roles=False, users=False)
 
@@ -70,6 +73,13 @@ def is_room_locked(room,db):
     except:
         traceback.print_exc()
         return False
+
+def genid():
+    value = ''
+    for i in range(6):
+        letter = random.choice(string.ascii_lowercase + string.digits)
+        value = '{0}{1}'.format(value, letter)
+    return value
 
 class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Support'):
     """An extension that enables Unifier to run on Revolt. Manages Revolt instance, as well as Revolt-to-Revolt and Revolt-to-Discord bridging.
@@ -130,8 +140,13 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 return await self.process_commands(message)
             if not roomname:
                 return
-            if roomname=='pr':
-                return await message.channel.send('PRs aren\'t supported in Unifier for Revolt yet.')
+            pr_id = None
+            if allow_prs:
+                pr_roomname = list(self.bot.db['rooms'].keys())[pr_room_index]
+                if pr_roomname == roomname:
+                    pr_id = genid()
+                    replies = [revolt.MessageReply(message)]
+                    await message.channel.send(f'Assigned PR ID: `{pr_id}`\nUse this to reference this PR message.',replies=replies)
             user_hash = encrypt_string(f'{message.author.id}')[:3]
             guild_hash = encrypt_string(f'{message.server.id}')[:3]
             ids = {}
@@ -371,20 +386,52 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                                 label=f'x{len(ref.embeds) + len(ref.attachments)}',
                                 emoji='\U0001F3DE', disabled=True
                             )
-                        components = discord.ui.MessageComponents(
-                            discord.ui.ActionRow(
-                                discord.ui.Button(style=discord.ButtonStyle.url,url=url,label=f'Replying to @{ref_author}')
-                            ), discord.ui.ActionRow(
-                                button
+                        if pr_id:
+                            components = discord.ui.MessageComponents(
+                                discord.ui.ActionRow(
+                                    discord.ui.Button(style=discord.ButtonStyle.red, disabled=True,
+                                                      label=f'PR ID: {pr_id}', emoji='\U0001F4AC')
+                                ),
+                                discord.ui.ActionRow(
+                                    discord.ui.Button(style=discord.ButtonStyle.url,url=url,label=f'Replying to @{ref_author}')
+                                ), discord.ui.ActionRow(
+                                    button
+                                )
                             )
-                        )
+                        else:
+                            components = discord.ui.MessageComponents(
+                                discord.ui.ActionRow(
+                                    discord.ui.Button(style=discord.ButtonStyle.url, url=url,
+                                                      label=f'Replying to @{ref_author}')
+                                ), discord.ui.ActionRow(
+                                    button
+                                )
+                            )
                     else:
-                        components = discord.ui.MessageComponents(
-                            discord.ui.ActionRow(
-                                discord.ui.Button(style=discord.ButtonStyle.gray,disabled=True,label='Replying to [unknown]')
+                        if pr_id:
+                            components = discord.ui.MessageComponents(
+                                discord.ui.ActionRow(
+                                    discord.ui.Button(style=discord.ButtonStyle.red, disabled=True,
+                                                      label=f'PR ID: {pr_id}', emoji='\U0001F4AC')
+                                ),
+                                discord.ui.ActionRow(
+                                    discord.ui.Button(style=discord.ButtonStyle.gray,disabled=True,label='Replying to [unknown]')
+                                )
                             )
+                        else:
+                            components = discord.ui.MessageComponents(
+                                discord.ui.ActionRow(
+                                    discord.ui.Button(style=discord.ButtonStyle.gray, disabled=True,
+                                                      label='Replying to [unknown]')
+                                )
+                            )
+                elif pr_id:
+                    components = discord.ui.MessageComponents(
+                        discord.ui.ActionRow(
+                            discord.ui.Button(style=discord.ButtonStyle.red, disabled=True,
+                                              label=f'PR ID: {pr_id}', emoji='\U0001F4AC')
                         )
-
+                    )
                 files = []
                 for file in message.attachments:
                     bytes = await file.read()
@@ -407,6 +454,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
             self.bot.bridged_obe[f'{message.id}'].update(
                 {'discord': ids, 'source': [message.server.id, message.author.id]})
+            if pr_id:
+                self.bot.prs.update({pr_id: ids})
 
         async def on_message_update(self, before, message):
             roomname = None
