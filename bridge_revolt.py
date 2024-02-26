@@ -845,14 +845,5 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 except RuntimeError:
                     pass
 
-    @commands.command(hidden=True)
-    async def send_to_revolt(self,ctx,*,message):
-        if not ctx.author.id==owner:
-            return
-        server = self.bot.revolt_client.get_server('01HDS71G78AT18B9DEW3K6KXST')
-        channel = server.get_channel('01HDS71G78TTV3J3HMX3FB180Q')
-        persona = revolt.Masquerade(name="Unifier (Discord)")
-        await channel.send(message,masquerade=persona)
-
 def setup(bot):
     bot.add_cog(Revolt(bot))
