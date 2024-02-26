@@ -233,6 +233,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 try:
                     user = self.get_user(userid)
                 except:
+                    offset += 1
                     continue
                 message.content = message.content.replace(f'<@{userid}>',
                                                       f'@{user.display_name or user.name}').replace(
@@ -471,6 +472,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 try:
                     user = self.get_user(userid)
                 except:
+                    offset += 1
                     continue
                 message.content = message.content.replace(f'<@{userid}>',
                                                           f'@{user.display_name or user.name}').replace(
