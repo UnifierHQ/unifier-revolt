@@ -797,15 +797,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 avurl = None
             if not url == '':
                 avurl = url
-            embed = discord.Embed(title='This is your UniChat avatar!', description=desc)
-            author = f'{ctx.author.name}#{ctx.author.discriminator}'
-            if ctx.author.discriminator == '0':
-                author = f'@{ctx.author.name}'
-            try:
-                embed.set_author(name=author, icon_url=avurl)
-                embed.set_thumbnail(url=avurl)
-            except:
-                return await ctx.send("Invalid URL!")
+            embed = revolt.SendableEmbed(title='This is your UniChat avatar!', description=desc, icon_url=avurl)
             if url == 'remove':
                 if not f'{ctx.author.id}' in list(self.bot.db['avatars'].keys()):
                     return await ctx.send('You don\'t have a custom avatar!')
@@ -816,9 +808,11 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 embed.description = 'Your avatar has been saved!'
                 self.bot.db['avatars'].update({f'{ctx.author.id}': url})
                 self.bot.db.save_data()
-            if url == '':
-                embed.set_footer(text='To change your avatar, run u!avatar <url>.')
-            await ctx.send(embed=embed)
+            try:
+                await ctx.send(embed=embed)
+            except:
+                if not url=='':
+                    return await ctx.send("Invalid URL!")
 
         @rv_commands.command()
         async def about(self,ctx):
