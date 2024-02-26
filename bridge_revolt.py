@@ -773,6 +773,54 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 await ctx.send('Your Revolt messages will now inherit the custom color.')
 
         @rv_commands.command()
+        async def nickname(self, ctx, *, nickname=''):
+            if len(nickname) > 23:
+                return await ctx.send('Please keep your nickname within 23 characters.')
+            if len(nickname) == 0:
+                self.bot.db['nicknames'].pop(f'{ctx.author.id}', None)
+            else:
+                self.bot.db['nicknames'].update({f'{ctx.author.id}': nickname})
+            self.bot.db.save_data()
+            await ctx.send('Nickname updated.')
+
+        @rv_commands.command()
+        async def avatar(self, ctx, *, url=''):
+            desc = 'You have no avatar! Run `u!avatar <url>` or set an avatar in your profile settings.'
+            try:
+                if f'{ctx.author.id}' in list(self.bot.db['avatars'].keys()):
+                    avurl = self.bot.db['avatars'][f'{ctx.author.id}']
+                    desc = 'You have a custom avatar! Run `u!avatar <url>` to change it, or run `u!avatar remove` to remove it.'
+                else:
+                    desc = 'You have a default avatar! Run `u!avatar <url>` to set a custom one for UniChat.'
+                    avurl = ctx.author.avatar.url
+            except:
+                avurl = None
+            if not url == '':
+                avurl = url
+            embed = discord.Embed(title='This is your UniChat avatar!', description=desc)
+            author = f'{ctx.author.name}#{ctx.author.discriminator}'
+            if ctx.author.discriminator == '0':
+                author = f'@{ctx.author.name}'
+            try:
+                embed.set_author(name=author, icon_url=avurl)
+                embed.set_thumbnail(url=avurl)
+            except:
+                return await ctx.send("Invalid URL!")
+            if url == 'remove':
+                if not f'{ctx.author.id}' in list(self.bot.db['avatars'].keys()):
+                    return await ctx.send('You don\'t have a custom avatar!')
+                self.bot.db['avatars'].pop(f'{ctx.author.id}')
+                return await ctx.send('Custom avatar removed!')
+            if not url == '':
+                embed.title = 'This is how you\'ll look!'
+                embed.description = 'Your avatar has been saved!'
+                self.bot.db['avatars'].update({f'{ctx.author.id}': url})
+                self.bot.db.save_data()
+            if url == '':
+                embed.set_footer(text='To change your avatar, run u!avatar <url>.')
+            await ctx.send(embed=embed)
+
+        @rv_commands.command()
         async def about(self,ctx):
             await ctx.send('**Unifier for Revolt**\nVersion 1.0.0, made by Green')
 
