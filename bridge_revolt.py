@@ -19,6 +19,7 @@ with open('config.json', 'r') as file:
 owner = data['owner']
 external_services = data['external']
 allow_prs = data["allow_prs"]
+admin_ids = data['admin_ids']
 pr_room_index = data["pr_room_index"] # If this is 0, then the oldest room will be used as the PR room.
 pr_ref_room_index = data["pr_ref_room_index"]
 
