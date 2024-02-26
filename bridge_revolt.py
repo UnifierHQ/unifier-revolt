@@ -173,7 +173,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
                 identifier = ' (' + user_hash + guild_hash + ')'
                 author = message.author.display_name or message.author.name
-                if f'{message.author.id}' in list(self.bot.db['nicknames'].keys()):
+                if message.author.id in list(self.bot.db['nicknames'].keys()):
                     author = self.bot.db['nicknames'][f'{message.author.id}']
                 rvtcolor = None
                 if message.author.id in list(self.bot.db['colors'].keys()):
@@ -452,6 +452,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
                 identifier = ' (' + user_hash + guild_hash + ')'
                 author = message.author.display_name or message.author.name
+                if message.author.id in list(self.bot.db['nicknames'].keys()):
+                    author = self.bot.db['nicknames'][f'{message.author.id}']
+
                 msg = await webhook.send(avatar_url=av_url,username=author+identifier,
                                          content=discordfriendly,files=files,allowed_mentions=mentions,
                                          components=components,wait=True
