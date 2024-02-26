@@ -226,7 +226,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                                         masquerade=persona)
                 ids.update({guild.id: msg.id})
 
-            ids.update({'discord': {}, 'source': [message.server.id, message.author.id]})
+            ids.update({'discord': {}, 'source': 'revolt', 'server': message.server.id})
             self.bot.bridged_obe.update({f'{message.id}': ids})
 
             threads = []
