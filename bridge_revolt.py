@@ -192,7 +192,11 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                         except:
                             pass
                 try:
-                    persona = revolt.Masquerade(name=author + identifier, avatar=message.author.avatar.url, colour=rvtcolor)
+                    if message.author.id in list(self.bot.db['avatars'].keys()):
+                        persona = revolt.Masquerade(name=author + identifier, avatar=self.bot.db['avatars'][message.author.id], colour=rvtcolor)
+                    else:
+                        persona = revolt.Masquerade(name=author + identifier, avatar=message.author.avatar.url,
+                                                    colour=rvtcolor)
                 except:
                     persona = revolt.Masquerade(name=author + identifier, avatar=None, colour=rvtcolor)
                 msg_data = None
@@ -443,13 +447,18 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 else:
                     av_url = message.author.avatar.url
 
+                if message.author.id in list(self.bot.db['avatars'].keys()):
+                    av_url = self.bot.db['avatars'][message.author.id]
+
                 identifier = ' (' + user_hash + guild_hash + ')'
                 author = message.author.display_name or message.author.name
-
-                msg = await webhook.send(avatar_url=av_url,username=author+identifier,
-                                         content=discordfriendly,files=files,allowed_mentions=mentions,
-                                         components=components,wait=True
-                                         )
+                try:
+                    msg = await webhook.send(avatar_url=av_url,username=author+identifier,
+                                             content=discordfriendly,files=files,allowed_mentions=mentions,
+                                             components=components,wait=True
+                                             )
+                except:
+                    continue
                 self.bot.bridged_urls_external.update({f'{msg.id}':f'https://discord.com/channels/{webhook.guild_id}/{webhook.channel_id}/{msg.id}'})
                 ids.update({f'{guild.id}':msg.id})
 
