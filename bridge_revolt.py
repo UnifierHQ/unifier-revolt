@@ -452,13 +452,10 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
                 identifier = ' (' + user_hash + guild_hash + ')'
                 author = message.author.display_name or message.author.name
-                try:
-                    msg = await webhook.send(avatar_url=av_url,username=author+identifier,
-                                             content=discordfriendly,files=files,allowed_mentions=mentions,
-                                             components=components,wait=True
-                                             )
-                except:
-                    continue
+                msg = await webhook.send(avatar_url=av_url,username=author+identifier,
+                                         content=discordfriendly,files=files,allowed_mentions=mentions,
+                                         components=components,wait=True
+                                         )
                 self.bot.bridged_urls_external.update({f'{msg.id}':f'https://discord.com/channels/{webhook.guild_id}/{webhook.channel_id}/{msg.id}'})
                 ids.update({f'{guild.id}':msg.id})
 
