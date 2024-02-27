@@ -494,9 +494,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 if guild==message.server.id:
                     continue
                 try:
-                    guild = self.bot.revolt_client.get_server(guild)
+                    guild = self.get_server(guild)
                 except:
-                    continue
+                    try:
+                        guild = await self.fetch_server(guild)
+                    except:
+                        continue
                 if guild.id in f'{self.bot.db["banned"]}':
                     if t >= self.bot.db["banned"][guild.id]:
                         self.bot.db["banned"].pop(guild.id)
@@ -509,7 +512,13 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                         continue
                 except:
                     pass
-                ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
+                try:
+                    ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
+                except:
+                    try:
+                        ch = await self.fetch_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
+                    except:
+                        continue
                 msg = await ch.fetch_message(self.bot.bridged_obe[message.id][guild.id])
                 if message.author.bot:
                     await msg.edit(content=message.content, embeds=message.embeds)
