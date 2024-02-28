@@ -155,7 +155,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 if guild==message.server.id:
                     continue
                 try:
-                    guild = self.bot.revolt_client.get_server(guild)
+                    guild = self.get_server(guild)
                 except:
                     continue
                 if guild.id in f'{self.bot.db["banned"]}':
@@ -618,7 +618,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 if guild == message.server.id:
                     continue
                 try:
-                    guild = self.bot.revolt_client.get_server(guild)
+                    guild = self.get_server(guild)
                 except:
                     continue
                 if guild.id in f'{self.bot.db["banned"]}':
@@ -754,8 +754,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         @commands.command(aliases=['ban'])
         async def restrict(self, ctx, *, target):
-            if not (ctx.author.guild_permissions.administrator or ctx.author.guild_permissions.kick_members or
-                    ctx.author.guild_permissions.ban_members):
+            if not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members:
                 return await ctx.send('You cannot restrict members/servers.')
             try:
                 userid = int(target.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1))
@@ -783,8 +782,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         @rv_commands.command(aliases=['unban'])
         async def unrestrict(self, ctx, *, target):
-            if not (ctx.author.guild_permissions.administrator or ctx.author.guild_permissions.kick_members or
-                    ctx.author.guild_permissions.ban_members):
+            if not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members:
                 return await ctx.send('You cannot unrestrict members/servers.')
             try:
                 userid = int(target.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1))
@@ -800,6 +798,83 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             self.bot.db['blocked'][f'{ctx.guild.id}'].remove(userid)
             self.bot.db.save_data()
             await ctx.send('User/server can now forward messages to this channel!')
+
+        @commands.command(aliases=['find'])
+        async def identify(self, ctx):
+            if (not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members and
+                    not ctx.author.id in self.bot.moderators):
+                return
+            try:
+                msg = ctx.message.replies[0]
+                if msg == None:
+                    msg = await ctx.channel.fetch_message(ctx.message.replies[0].id)
+            except:
+                return await ctx.send('Invalid message!')
+            hookfound = False
+            for key in self.bot.db['rooms']:
+                room_guilds = self.bot.db['rooms'][key]
+                if f'{msg.webhook_id}' in f'{room_guilds}':
+                    hookfound = True
+                    break
+            if not hookfound:
+                return await ctx.send('I didn\'t forward this!')
+            identifier = msg.author.name.split('(')
+            identifier = identifier[len(identifier) - 1].replace(')', '')
+            username = msg.author.name[:-9]
+            found = False
+            origin_guild = None
+            origin_user = None
+            for guild in self.bot.guilds:
+                hashed = encrypt_string(f'{guild.id}')
+                guildhash = identifier[3:]
+                if hashed.startswith(guildhash):
+                    origin_guild = guild
+                    userhash = identifier[:-3]
+                    try:
+                        matches = list(filter(lambda x: encrypt_string(f'{x.id}').startswith(userhash), guild.members))
+                        if len(matches) == 1:
+                            origin_user = matches[0]
+                        else:
+                            if len(matches) == 0:
+                                raise ValueError()
+                            text = f'Found multiple matches for {origin_guild.name} ({origin_guild.id})'
+                            for match in matches:
+                                text = text + '\n{match} ({match.id})'
+                            return await ctx.send(text)
+                        found = True
+                    except:
+                        continue
+
+            if found:
+                if ctx.author.id in self.bot.moderators:
+                    try:
+                        for key in self.bot.bridged:
+                            origin_msg = self.bot.bridged[key]
+                            values = list(origin_msg.values())
+                            if ctx.message.reference.message_id in values:
+                                origin_msg_id = key
+                                break
+                        await ctx.send(
+                            f'{origin_user} ({origin_user.id}) via {origin_guild.name} ({origin_guild.id}, Discord)\nOriginal ID {origin_msg_id}')
+                    except:
+                        await ctx.send(
+                            f'{origin_user} ({origin_user.id}) via {origin_guild.name} ({origin_guild.id})\nCould not find origin message ID')
+                        raise
+                else:
+                    await ctx.send(f'{origin_user} ({origin_user.id}) via {origin_guild.name} ({origin_guild.id})')
+            else:
+                for guild in self.servers:
+                    hashed = encrypt_string(f'{guild.id}')
+                    guildhash = identifier[3:]
+                    if hashed.startswith(guildhash):
+                        for member in guild.members:
+                            hashed = encrypt_string(f'{member.id}')
+                            userhash = identifier[:-3]
+                            if hashed.startswith(userhash):
+                                return await ctx.send(
+                                    f'{member.name} ({member.id}) via {guild.name} ({guild.id}, Revolt)')
+
+                await ctx.send('Could not identify user!')
 
         @rv_commands.command(aliases=['colour'])
         async def color(self, ctx, *, color=''):
