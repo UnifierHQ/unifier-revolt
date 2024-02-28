@@ -752,6 +752,55 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 await ctx.send('Something went wrong - check my permissions.')
                 raise
 
+        @commands.command(aliases=['ban'])
+        async def restrict(self, ctx, *, target):
+            if not (ctx.author.guild_permissions.administrator or ctx.author.guild_permissions.kick_members or
+                    ctx.author.guild_permissions.ban_members):
+                return await ctx.send('You cannot restrict members/servers.')
+            try:
+                userid = int(target.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1))
+                if userid == ctx.author.id:
+                    return await ctx.send('You can\'t restrict yourself :thinking:')
+                if userid == ctx.guild.id:
+                    return await ctx.send('You can\'t restrict your own server :thinking:')
+            except:
+                userid = target
+                if not len(userid) == 26:
+                    return await ctx.send('Invalid user/server!')
+            if userid in self.bot.moderators:
+                return await ctx.send(
+                    'UniChat moderators are immune to blocks!\n(Though, do feel free to report anyone who abuses this immunity.)')
+            banlist = []
+            if f'{ctx.guild.id}' in list(self.bot.db['blocked'].keys()):
+                banlist = self.bot.db['blocked'][f'{ctx.guild.id}']
+            else:
+                self.bot.db['blocked'].update({f'{ctx.guild.id}': []})
+            if userid in banlist:
+                return await ctx.send('User/server already banned!')
+            self.bot.db['blocked'][f'{ctx.guild.id}'].append(userid)
+            self.bot.db.save_data()
+            await ctx.send('User/server can no longer forward messages to this channel!')
+
+        @rv_commands.command(aliases=['unban'])
+        async def unrestrict(self, ctx, *, target):
+            if not (ctx.author.guild_permissions.administrator or ctx.author.guild_permissions.kick_members or
+                    ctx.author.guild_permissions.ban_members):
+                return await ctx.send('You cannot unrestrict members/servers.')
+            try:
+                userid = int(target.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1))
+            except:
+                userid = target
+                if not len(target) == 26:
+                    return await ctx.send('Invalid user/server!')
+            banlist = []
+            if f'{ctx.guild.id}' in list(self.bot.db['blocked'].keys()):
+                banlist = self.bot.db['blocked'][f'{ctx.guild.id}']
+            if not userid in banlist:
+                return await ctx.send('User/server not banned!')
+            self.bot.db['blocked'][f'{ctx.guild.id}'].remove(userid)
+            self.bot.db.save_data()
+            await ctx.send('User/server can now forward messages to this channel!')
+
         @rv_commands.command(aliases=['colour'])
         async def color(self, ctx, *, color=''):
             if color == '':
@@ -835,6 +884,10 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         @rv_commands.command()
         async def about(self,ctx):
             await ctx.send('**Unifier for Revolt**\nVersion 1.0.0, made by Green')
+
+        async def on_command_error(self, ctx, error):
+            # Error logging because asyncio is too stubborn
+            traceback.print_exc()
 
     async def revolt_boot(self):
         if self.bot.revolt_client is None:
