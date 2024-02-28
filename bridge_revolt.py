@@ -982,6 +982,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     await self.bot.revolt_client.start()
                 except RuntimeError:
                     pass
+                except:
+                    log('RVT', 'error', 'Revolt client failed to boot!')
+                    traceback.print_exc()
 
 def setup(bot):
     bot.add_cog(Revolt(bot))
