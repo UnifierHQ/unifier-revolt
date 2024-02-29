@@ -170,7 +170,10 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                         continue
                 except:
                     pass
-                ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
+                try:
+                    ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
+                except:
+                    continue
                 identifier = ' (' + user_hash + guild_hash + ')'
                 author = message.author.display_name or message.author.name
                 if message.author.id in list(self.bot.db['nicknames'].keys()):
