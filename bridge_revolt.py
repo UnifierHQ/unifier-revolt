@@ -812,11 +812,15 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 if msg == None:
                     msg = await ctx.channel.fetch_message(ctx.message.replies[0].id)
             except:
-                return await ctx.send('Invalid message!')
+                try:
+                    msg = await ctx.channel.fetch_message(ctx.message.reply_ids[0])
+                except:
+                    traceback.print_exc()
+                    return await ctx.send('Invalid message!')
             hookfound = False
-            for key in self.bot.db['rooms']:
-                room_guilds = self.bot.db['rooms'][key]
-                if f'{msg.webhook_id}' in f'{room_guilds}':
+            for key in self.bot.db['rooms_revolt']:
+                room_guilds = self.bot.db['rooms_revolt'][key]
+                if f'{msg.channel.id}' in f'{room_guilds}':
                     hookfound = True
                     break
             if not hookfound:
@@ -849,22 +853,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                         continue
 
             if found:
-                if ctx.author.id in self.bot.moderators:
-                    try:
-                        for key in self.bot.bridged:
-                            origin_msg = self.bot.bridged[key]
-                            values = list(origin_msg.values())
-                            if ctx.message.reference.message_id in values:
-                                origin_msg_id = key
-                                break
-                        await ctx.send(
-                            f'{origin_user} ({origin_user.id}) via {origin_guild.name} ({origin_guild.id}, Discord)\nOriginal ID {origin_msg_id}')
-                    except:
-                        await ctx.send(
-                            f'{origin_user} ({origin_user.id}) via {origin_guild.name} ({origin_guild.id})\nCould not find origin message ID')
-                        raise
-                else:
-                    await ctx.send(f'{origin_user} ({origin_user.id}) via {origin_guild.name} ({origin_guild.id})')
+                await ctx.send(f'{origin_user} ({origin_user.id}) via {origin_guild.name} ({origin_guild.id})')
             else:
                 for guild in self.servers:
                     hashed = encrypt_string(f'{guild.id}')
