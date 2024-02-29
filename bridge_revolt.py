@@ -755,7 +755,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 await ctx.send('Something went wrong - check my permissions.')
                 raise
 
-        @commands.command(aliases=['ban'])
+        @rv_commands.command(aliases=['ban'])
         async def restrict(self, ctx, *, target):
             if not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members:
                 return await ctx.send('You cannot restrict members/servers.')
@@ -802,7 +802,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             self.bot.db.save_data()
             await ctx.send('User/server can now forward messages to this channel!')
 
-        @commands.command(aliases=['find'])
+        @rv_commands.command(aliases=['find'])
         async def identify(self, ctx):
             if (not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members and
                     not ctx.author.id in self.bot.moderators):
