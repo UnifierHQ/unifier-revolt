@@ -1,3 +1,5 @@
+import sys
+
 import discord
 from discord.ext import commands
 from revolt.ext import commands as rv_commands
@@ -725,9 +727,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     log('RVT','info','Booting Revolt client...')
                     try:
                         await self.bot.revolt_client.start()
-                    except RuntimeError:
+                    except Exception as e:
                         log('RVT', 'error', 'Revolt client failed to boot!')
                         traceback.print_exc()
+                        if type(e) is asyncio.exceptions.CancelledError:
+                            log('BOT', 'info', 'Shutting down Unifier due to likely KeyboardInterrupt')
+                            sys.exit(0)
                         break
                 log('RVT', 'warn', 'Revolt client has exited. Rebooting in 10 seconds...')
                 try:
