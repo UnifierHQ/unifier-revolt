@@ -487,13 +487,14 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             except:
                 return await ctx.send('Could not find message in cache!')
 
-            if not ctx.author.id == msg.author_id and not ctx.author.id in self.bot.moderators:
+            if not ctx.author.id==msg.author_id and not ctx.author.id in self.bot.moderators:
                 return await ctx.send('You didn\'t send this message!')
 
             try:
                 await self.bot.bridge.delete_parent(msg_id)
-                if not msg.webhook:
-                    return await ctx.send('Deleted message (parent deleted, copies will follow)')
+                if msg.webhook:
+                    raise ValueError()
+                return await ctx.send('Deleted message (parent deleted, copies will follow)')
             except:
                 try:
                     deleted = await self.bot.bridge.delete_copies(msg_id)
