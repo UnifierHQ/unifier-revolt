@@ -298,8 +298,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     self.bot.db.save_data()
                 else:
                     return
-
-            msgdata = await self.bot.bridge.fetch_message(message.id)
+            try:
+                msgdata = await self.bot.bridge.fetch_message(message.id)
+                if not msgdata.id==message.id:
+                    raise ValueError()
+            except:
+                return
 
             for guild in self.bot.db['rooms_revolt'][roomname]:
                 if guild == message.server.id:
@@ -449,6 +453,54 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             except:
                 await ctx.send('Something went wrong - check my permissions.')
                 raise
+
+        @rv_commands.command()
+        async def delete(self, ctx, *, msg_id=None):
+            """Deletes all bridged messages. Does not delete the original."""
+            gbans = self.bot.db['banned']
+            ct = time.time()
+            if f'{ctx.author.id}' in list(gbans.keys()):
+                banuntil = gbans[f'{ctx.author.id}']
+                if ct >= banuntil and not banuntil == 0:
+                    self.bot.db['banned'].pop(f'{ctx.author.id}')
+                    self.bot.db.update()
+                else:
+                    return
+            if f'{ctx.server.id}' in list(gbans.keys()):
+                banuntil = gbans[f'{ctx.server.id}']
+                if ct >= banuntil and not banuntil == 0:
+                    self.bot.db['banned'].pop(f'{ctx.server.id}')
+                    self.bot.db.update()
+                else:
+                    return
+            if f'{ctx.author.id}' in list(gbans.keys()) or f'{ctx.server.id}' in list(gbans.keys()):
+                return await ctx.send('Your account or your guild is currently **global restricted**.')
+
+            try:
+                msg_id = ctx.message.replies[0].id
+            except:
+                if not msg_id:
+                    return await ctx.send('No message!')
+
+            try:
+                msg = await self.bot.bridge.fetch_message(msg_id)
+            except:
+                return await ctx.send('Could not find message in cache!')
+
+            if not ctx.author.id == msg.author_id and not ctx.author.id in self.bot.moderators:
+                return await ctx.send('You didn\'t send this message!')
+
+            try:
+                await self.bot.bridge.delete_parent(msg_id)
+                if not msg.webhook:
+                    return await ctx.send('Deleted message (parent deleted, copies will follow)')
+            except:
+                try:
+                    deleted = await self.bot.bridge.delete_copies(msg_id)
+                    return await ctx.send(f'Deleted message ({deleted} copies deleted)')
+                except:
+                    traceback.print_exc()
+                    await ctx.send('Something went wrong.')
 
         @rv_commands.command(aliases=['ban'])
         async def restrict(self, ctx, *, target):
