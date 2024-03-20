@@ -143,6 +143,10 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 return
             await self.bot.bridge.send(room=roomname, message=message, platform='revolt')
             await self.bot.bridge.send(room=roomname, message=message, platform='discord')
+            for platform in external_services:
+                if platform == 'revolt':
+                    continue
+                await self.bot.bridge.send(room=roomname, message=message, platform=platform)
 
         async def on_message_update(self, before, message):
             roomname = None
