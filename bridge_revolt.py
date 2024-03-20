@@ -713,18 +713,26 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     self.bot.db['rooms_revolt'].update({key: {}})
                     log('DAT','ok','Synced room '+key)
             self.bot.db.save_data()
-            async with aiohttp.ClientSession() as session:
-                self.bot.revolt_session = session
-                self.bot.revolt_client = self.Client(session, data['revolt_token'])
-                self.bot.revolt_client.add_bot(self.bot)
-                log('RVT','info','Booting Revolt client...')
+            while True:
+                async with aiohttp.ClientSession() as session:
+                    self.bot.revolt_session = session
+                    self.bot.revolt_client = self.Client(session, data['revolt_token'])
+                    self.bot.revolt_client.add_bot(self.bot)
+                    log('RVT','info','Booting Revolt client...')
+                    try:
+                        await self.bot.revolt_client.start()
+                    except RuntimeError:
+                        pass
+                    except:
+                        log('RVT', 'error', 'Revolt client failed to boot!')
+                        traceback.print_exc()
+                        break
+                log('RVT', 'warn', 'Revolt client has exited. Rebooting in 10 seconds...')
                 try:
-                    await self.bot.revolt_client.start()
-                except RuntimeError:
-                    pass
+                    await asyncio.sleep(10)
                 except:
-                    log('RVT', 'error', 'Revolt client failed to boot!')
-                    traceback.print_exc()
+                    log('RVT', 'error', 'Couldn\'t sleep, exiting loop...')
+                    break
 
 def setup(bot):
     bot.add_cog(Revolt(bot))
