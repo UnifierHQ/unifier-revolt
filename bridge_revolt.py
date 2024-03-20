@@ -733,8 +733,6 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     except Exception as e:
                         log('RVT', 'error', 'Revolt client failed to boot!')
                         traceback.print_exc()
-                        if type(e) is asyncio.exceptions.CancelledError:
-                            os.kill(self.bot.pid, signal.SIGKILL)
                         break
                 log('RVT', 'warn', 'Revolt client has exited. Rebooting in 10 seconds...')
                 try:
