@@ -314,7 +314,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             except:
                 return
 
-            await self.bot.delete_copies(msgdata.id)
+            await self.bot.bridge.delete_copies(msgdata.id)
 
         @rv_commands.command(aliases=['connect','federate'])
         async def bind(self,ctx,*,room):
