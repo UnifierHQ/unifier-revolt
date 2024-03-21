@@ -98,7 +98,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         if not hasattr(self.bot, 'revolt_client'):
             self.bot.revolt_client = None
             self.bot.revolt_session = None
-            self.revolt_client_task = asyncio.create_task(self.revolt_boot())
+            self.bot.revolt_client_task = asyncio.create_task(self.revolt_boot())
 
     def db(self):
         return self.bot.db
@@ -730,7 +730,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     log('RVT','info','Booting Revolt client...')
                     try:
                         await self.bot.revolt_client.start()
-                    except Exception as e:
+                    except:
                         log('RVT', 'error', 'Revolt client failed to boot!')
                         traceback.print_exc()
                         break
