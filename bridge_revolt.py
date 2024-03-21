@@ -314,74 +314,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             except:
                 return
 
-            for guild in self.bot.db['rooms_revolt'][roomname]:
-                if guild == message.server.id:
-                    continue
-                try:
-                    guild = self.get_server(guild)
-                except:
-                    continue
-                if guild.id in f'{self.bot.db["banned"]}':
-                    if t >= self.bot.db["banned"][guild.id]:
-                        self.bot.db["banned"].pop(guild.id)
-                        self.bot.db.save_data()
-                    else:
-                        continue
-                try:
-                    if message.author.id in f'{self.bot.db["blocked"][guild.id]}' or message.server.id in f'{self.bot.db["blocked"][guild.id]}':
-                        continue
-                except:
-                    pass
-                ch = guild.get_channel(self.bot.db['rooms_revolt'][roomname][guild.id][0])
-
-                if msgdata.source=='revolt':
-                    msgid = await msgdata.fetch_id(guild.id)
-                else:
-                    msgid = await msgdata.fetch_external('revolt',guild.id)
-
-                msg = await ch.fetch_message(msgid)
-                await msg.delete()
-
-            for guild in self.bot.db['rooms'][roomname]:
-                guild = self.bot.get_guild(int(guild))
-                if not guild:
-                    continue
-                if f'{guild.id}' in f'{self.bot.db["banned"]}':
-                    if t >= self.bot.db["banned"][f'{guild.id}']:
-                        self.bot.db["banned"].pop(f'{guild.id}')
-                        self.bot.db.save_data()
-                    else:
-                        continue
-                try:
-                    if message.author.id in str(self.bot.db["blocked"][f'{guild.id}']) or message.server.id in str(self.bot.db["blocked"][f'{guild.id}']):
-                        continue
-                except:
-                    pass
-                webhook = None
-                try:
-                    if f"{self.bot.db['rooms'][roomname][f'{guild.id}'][0]}" in list(
-                            self.bot.webhook_cache[f'{guild.id}'].keys()):
-                        webhook = self.bot.webhook_cache[f'{guild.id}'][
-                            f"{self.bot.db['rooms'][roomname][str(guild.id)][0]}"]
-                except:
-                    webhooks = await guild.webhooks()
-                    for hook in webhooks:
-                        if hook.id == self.bot.db['rooms'][roomname][f'{guild.id}'][0]:
-                            webhook = hook
-                            break
-
-                if not webhook:
-                    continue
-
-                if msgdata.source=='discord':
-                    msgid = await msgdata.fetch_id(guild.id)
-                else:
-                    msgid = await msgdata.fetch_external('discord',guild.id)
-
-                try:
-                    await webhook.delete_message(msgid)
-                except:
-                    continue
+            await self.bot.delete_copies(msgdata.id)
 
         @rv_commands.command(aliases=['connect','federate'])
         async def bind(self,ctx,*,room):
