@@ -177,7 +177,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 else:
                     return
 
-            msgdata = await self.bot.bridge.fetch_message(message.id) #
+            msgdata = await self.bot.bridge.fetch_message(message.id)
 
             await self.bot.bridge.edit(msgdata.id,message.content)
 
