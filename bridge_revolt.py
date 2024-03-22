@@ -154,14 +154,14 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 await self.bot.bridge.send(room=roomname, message=message, platform=platform)
 
         async def on_message_update(self, before, message):
+            if message.author.id==self.user.id:
+                return
             roomname = None
             for key in self.bot.db['rooms_revolt']:
                 if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
                     roomname = key
                     break
             if not roomname:
-                return
-            if message.author.id==self.user.id:
                 return
             t = time.time()
             if message.author.id in f'{self.bot.db["banned"]}':
