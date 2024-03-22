@@ -418,6 +418,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             identifier = msg.author.name.split('(')
             identifier = identifier[len(identifier) - 1].replace(')', '')
             username = msg.author.name[:-9]
+            if identifier == 'system':
+                return await ctx.send('This is a system message.')
             found = False
             origin_guild = None
             origin_user = None
