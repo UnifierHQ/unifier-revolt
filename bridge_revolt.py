@@ -237,11 +237,11 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     guild = []
                 if len(guild) >= 1:
                     return await ctx.send(
-                        'Your server is already linked to this room.\n**Accidentally deleted the webhook?** `u!unlink` it then `u!link` it back.')
+                        f'Your server is already linked to this room.\n**Accidentally deleted the webhook?** `{self.bot.command_prefix}unlink` it then `{self.bot.command_prefix}link` it back.')
                 index = 0
                 text = ''
                 if len(self.bot.db['rules'][room]) == 0:
-                    text = f'No rules exist yet for this room! For now, follow the main room\'s rules.\nYou can always view rules if any get added using `u!rules {room}`.'
+                    text = f'No rules exist yet for this room! For now, follow the main room\'s rules.\nYou can always view rules if any get added using `{self.bot.command_prefix}rules {room}`.'
                 else:
                     for rule in self.bot.db['rules'][room]:
                         if text == '':
@@ -511,13 +511,13 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         @rv_commands.command()
         async def avatar(self, ctx, *, url=''):
-            desc = 'You have no avatar! Run `u!avatar <url>` or set an avatar in your profile settings.'
+            desc = f'You have no avatar! Run `{self.bot.command_prefix}avatar <url>` or set an avatar in your profile settings.'
             try:
                 if f'{ctx.author.id}' in list(self.bot.db['avatars'].keys()):
                     avurl = self.bot.db['avatars'][f'{ctx.author.id}']
-                    desc = 'You have a custom avatar! Run `u!avatar <url>` to change it, or run `u!avatar remove` to remove it.'
+                    desc = f'You have a custom avatar! Run `{self.bot.command_prefix}avatar <url>` to change it, or run `{self.bot.command_prefix}avatar remove` to remove it.'
                 else:
-                    desc = 'You have a default avatar! Run `u!avatar <url>` to set a custom one for UniChat.'
+                    desc = f'You have a default avatar! Run `{self.bot.command_prefix}avatar <url>` to set a custom one for UniChat.'
                     avurl = ctx.author.avatar.url
             except:
                 avurl = None
