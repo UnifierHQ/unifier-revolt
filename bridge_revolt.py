@@ -158,9 +158,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 return
             roomname = None
             for key in self.bot.db['rooms_revolt']:
-                if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
-                    roomname = key
-                    break
+                try:
+                    if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
+                        roomname = key
+                        break
+                except:
+                    continue
             if not roomname:
                 return
             t = time.time()
