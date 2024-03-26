@@ -1,8 +1,3 @@
-import os
-import signal
-
-import sys
-
 import discord
 from discord.ext import commands
 from revolt.ext import commands as rv_commands
@@ -14,7 +9,6 @@ import traceback
 import time
 from time import gmtime, strftime
 import hashlib
-from io import BytesIO
 import random
 import string
 
@@ -163,7 +157,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                         roomname = key
                         break
                 except:
-                    continue
+                    pass
             if not roomname:
                 return
             t = time.time()
