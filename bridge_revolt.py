@@ -591,5 +591,5 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     log('RVT', 'error', 'Couldn\'t sleep, exiting loop...')
                     break
 
-def setup(bot):
-    bot.add_cog(Revolt(bot))
+async def setup(bot):
+    await bot.add_cog(Revolt(bot))
