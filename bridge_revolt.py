@@ -568,6 +568,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     self.bot.revolt_session = session
                     self.bot.revolt_client = self.Client(session, data['revolt_token'])
                     self.bot.revolt_client.add_bot(self.bot)
+                    self.bot.revolt_client.add_logger(log.buildlogger(self.bot.package, 'revolt.client', self.bot.loglevel))
                     self.logger.info('Booting Revolt client...')
                     try:
                         await self.bot.revolt_client.start()
