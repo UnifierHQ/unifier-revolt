@@ -25,7 +25,7 @@ import revolt
 import json
 import traceback
 import time
-from time import gmtime, strftime
+from utils import log
 import hashlib
 import random
 import string
@@ -41,20 +41,6 @@ pr_room_index = data["pr_room_index"] # If this is 0, then the oldest room will 
 pr_ref_room_index = data["pr_ref_room_index"]
 
 mentions = discord.AllowedMentions(everyone=False, roles=False, users=False)
-
-def log(type='???',status='ok',content='None'):
-    time1 = strftime("%Y.%m.%d %H:%M:%S", gmtime())
-    if status=='ok':
-        status = ' OK  '
-    elif status=='error':
-        status = 'ERROR'
-    elif status=='warn':
-        status = 'WARN '
-    elif status=='info':
-        status = 'INFO '
-    else:
-        raise ValueError('Invalid status type provided')
-    print(f'[{type} | {time1} | {status}] {content}')
 
 def encrypt_string(hash_string):
     sha_signature = \
@@ -111,6 +97,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             self.bot.revolt_client = None
             self.bot.revolt_session = None
             self.bot.revolt_client_task = asyncio.create_task(self.revolt_boot())
+        self.logger = log.buildlogger(self.bot.package, 'revolt.core', self.bot.loglevel)
 
     def db(self):
         return self.bot.db
@@ -119,16 +106,20 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         def __init__(self, *args, **kwargs):
             super().__init__(*args, **kwargs)
             self.bot = None
+            self.logger = None
 
         def add_bot(self,bot):
             """Adds a Discord bot to the Revolt client."""
             self.bot = bot
 
+        def add_logger(self,logger):
+            self.logger = logger
+
         async def get_prefix(self, message: revolt.Message):
             return self.bot.command_prefix
 
         async def on_ready(self):
-            log('RVT','ok','Revolt client booted!')
+            self.logger.info('Revolt client booted!')
 
         async def on_message(self, message):
             roomname = None
@@ -566,29 +557,28 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
     async def revolt_boot(self):
         if self.bot.revolt_client is None:
-            log('DAT','info','Syncing Revolt rooms...')
+            self.logger.info('Syncing Revolt rooms...')
             for key in self.bot.db['rooms']:
                 if not key in list(self.bot.db['rooms_revolt'].keys()):
                     self.bot.db['rooms_revolt'].update({key: {}})
-                    log('DAT','ok','Synced room '+key)
+                    self.logger.debug('Synced room '+key)
             self.bot.db.save_data()
             while True:
                 async with aiohttp.ClientSession() as session:
                     self.bot.revolt_session = session
                     self.bot.revolt_client = self.Client(session, data['revolt_token'])
                     self.bot.revolt_client.add_bot(self.bot)
-                    log('RVT','info','Booting Revolt client...')
+                    self.logger.info('Booting Revolt client...')
                     try:
                         await self.bot.revolt_client.start()
                     except:
-                        log('RVT', 'error', 'Revolt client failed to boot!')
-                        traceback.print_exc()
+                        self.logger.exception('Revolt client failed to boot!')
                         break
-                log('RVT', 'warn', 'Revolt client has exited. Rebooting in 10 seconds...')
+                self.logger.warn('Revolt client has exited. Rebooting in 10 seconds...')
                 try:
                     await asyncio.sleep(10)
                 except:
-                    log('RVT', 'error', 'Couldn\'t sleep, exiting loop...')
+                    self.logger.error('Couldn\'t sleep, exiting loop...')
                     break
 
 def setup(bot):
