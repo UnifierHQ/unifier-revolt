@@ -29,9 +29,16 @@ from utils import log
 import hashlib
 import random
 import string
+from dotenv import load_dotenv
+import os
 
 with open('config.json', 'r') as file:
     data = json.load(file)
+
+load_dotenv() # Do not check success
+
+if not "TOKEN_REVOLT" in os.environ:
+    raise RuntimeError('No Revolt token found')
 
 owner = data['owner']
 external_services = data['external']
@@ -574,7 +581,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             while True:
                 async with aiohttp.ClientSession() as session:
                     self.bot.revolt_session = session
-                    self.bot.revolt_client = self.Client(session, data['revolt_token'])
+                    self.bot.revolt_client = self.Client(session, os.environ.get('TOKEN_REVOLT'))
                     self.bot.revolt_client.add_bot(self.bot)
                     self.bot.revolt_client.add_logger(log.buildlogger(self.bot.package, 'revolt.client', self.bot.loglevel))
                     self.logger.info('Booting Revolt client...')
