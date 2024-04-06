@@ -234,8 +234,16 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             try:
                 data = self.bot.db['rooms'][room]
             except:
-                return await ctx.send(
-                    'This isn\'t a valid room. Try `main`, `pr`, `prcomments`, or `liveries` instead.')
+                return await ctx.send(f'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
+            for room in list(self.bot.db['rooms_revolt'].keys()):
+                # Prevent duplicate binding
+                try:
+                    channel = self.bot.db['rooms_revolt'][room][f'{ctx.guild.id}'][0]
+                    if channel == ctx.channel.id:
+                        return await ctx.send(
+                            f'This channel is already linked to `{room}`!\nRun `{self.bot.command_prefix}unbind {room} to unbind from it.')
+                except:
+                    continue
             try:
                 try:
                     guild = data[f'{ctx.guild.id}']
