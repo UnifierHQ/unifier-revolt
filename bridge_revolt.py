@@ -241,7 +241,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     channel = self.bot.db['rooms_revolt'][room][f'{ctx.guild.id}'][0]
                     if channel == ctx.channel.id:
                         return await ctx.send(
-                            f'This channel is already linked to `{room}`!\nRun `{self.bot.command_prefix}unbind {room} to unbind from it.')
+                            f'This channel is already linked to `{room}`!\nRun `{self.bot.command_prefix}unbind {room}` to unbind from it.')
                 except:
                     continue
             try:
