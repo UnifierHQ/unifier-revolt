@@ -40,13 +40,6 @@ load_dotenv() # Do not check success
 if not "TOKEN_REVOLT" in os.environ:
     raise RuntimeError('No Revolt token found')
 
-owner = data['owner']
-external_services = data['external']
-allow_prs = data["allow_prs"]
-admin_ids = data['admin_ids']
-pr_room_index = data["pr_room_index"] # If this is 0, then the oldest room will be used as the PR room.
-pr_ref_room_index = data["pr_ref_room_index"]
-
 mentions = discord.AllowedMentions(everyone=False, roles=False, users=False)
 
 def encrypt_string(hash_string):
@@ -98,7 +91,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
     Developed by Green"""
     def __init__(self,bot):
         self.bot = bot
-        if not 'revolt' in external_services:
+        if not 'revolt' in self.bot.config['external']:
             raise RuntimeError('revolt is not listed as an external service in config.json. More info: https://unichat-wiki.pixels.onl/setup-selfhosted/getting-started#installing-revolt-support')
         if not hasattr(self.bot, 'revolt_client'):
             self.bot.revolt_client = None
@@ -158,7 +151,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 return
             await self.bot.bridge.send(room=roomname, message=message, platform='revolt')
             await self.bot.bridge.send(room=roomname, message=message, platform='discord')
-            for platform in external_services:
+            for platform in self.bot.config['external']:
                 if platform == 'revolt':
                     continue
                 await self.bot.bridge.send(room=roomname, message=message, platform=platform)
