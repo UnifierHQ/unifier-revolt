@@ -9,7 +9,7 @@ This is a plugin for Unifier which allows it to work on Revolt, a Discord altern
 instance and allows messages from Revolt to be bridged to other platforms.
 
 ## Requirements
-Unifier v1.1.8 or newer is required.
+Unifier v1.1.12 or newer is required.
 
 ## Setup
 To install Unifier Revolt Support, you can run `u!install-revolt` on the bot. If you have a different GitHub user URL 
