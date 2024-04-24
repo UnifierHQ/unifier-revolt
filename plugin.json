@@ -1,0 +1,15 @@
+{
+  "id": "revolt",
+  "name": "Revolt Support",
+  "description": "Unifier Revolt Support extension",
+  "version": "v1.0.4",
+  "release": 5,
+  "minimum": 36,
+  "shutdown": true,
+  "modules": [
+    "bridge_revolt.py"
+  ],
+  "utils": [
+    "revolt_check.py"
+  ]
+}
