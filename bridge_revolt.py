@@ -590,5 +590,35 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     self.logger.error('Couldn\'t sleep, exiting loop...')
                     break
 
+    @commands.command(name='stop-revolt', hidden=True)
+    async def stop_revolt(self, ctx):
+        """Kills the Revolt client. This is automatically done when upgrading Unifier."""
+        if not ctx.author.id == self.bot.config['owner']:
+            return
+        try:
+            await self.bot.revolt_session.close()
+            del self.bot.revolt_client
+            del self.bot.revolt_session
+            self.bot.unload_extension('cogs.bridge_revolt')
+            await ctx.send(f'Revolt client stopped.\nTo restart, run `{self.bot.command_prefix}load revolt`')
+        except:
+            self.logger.exception('Something went wrong!')
+            await ctx.send('Something went wrong while killing the instance.')
+
+    @commands.command(name='restart-revolt', hidden=True)
+    async def restart_revolt(self, ctx):
+        """Restarts the Revolt client."""
+        if not ctx.author.id == self.bot.config['owner']:
+            return
+        try:
+            await self.bot.revolt_session.close()
+            del self.bot.revolt_client
+            del self.bot.revolt_session
+            self.bot.reload_extension('cogs.bridge_revolt')
+            await ctx.send('Revolt client restarted.')
+        except:
+            self.logger.exception('Something went wrong!')
+            await ctx.send('Something went wrong while restarting the instance.')
+
 def setup(bot):
     bot.add_cog(Revolt(bot))
