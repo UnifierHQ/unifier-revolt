@@ -149,12 +149,52 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 return await self.process_commands(message)
             if not roomname:
                 return
+
+            try:
+                pr_roomname = self.bot.config['posts_room']
+            except:
+                pr_roomname = self.bot.db['rooms'][list(self.bot.db['rooms'].keys())[self.bot.config['pr_room_index']]]
+            try:
+                pr_ref_roomname = self.bot.config['posts_ref_room']
+            except:
+                pr_ref_roomname = self.bot.db['rooms'][
+                    list(self.bot.db['rooms'].keys())[self.bot.config['pr_ref_room_index']]]
+
+            is_pr = roomname == pr_roomname and (
+                self.bot.config['allow_prs'] if 'allow_prs' in list(self.bot.config.keys()) else False or
+                self.bot.config['allow_posts'] if 'allow_posts' in list(self.bot.config.keys()) else False
+            )
+            is_pr_ref = roomname == pr_ref_roomname and (
+                self.bot.config['allow_prs'] if 'allow_prs' in list(self.bot.config.keys()) else False or
+                self.bot.config['allow_posts'] if 'allow_posts' in list(self.bot.config.keys()) else False
+            )
+
+            should_delete = False
+            emojified = False
+
+            if '[emoji:' in message.content or is_pr or is_pr_ref:
+                emojified = True
+                should_delete = True
+
+            if not message.server.get_member(self.bot.user.id).get_channel_permissions(message.channel).manage_messages:
+                if emojified or is_pr_ref:
+                    return await message.channel.send(
+                        'Parent message could not be deleted. I may be missing the `Manage Messages` permission.'
+                    )
+
+            if (message.content.lower().startswith('is unifier down') or
+                    message.content.lower().startswith('unifier not working')):
+                await message.channel.send('no', replies=[revolt.MessageReply(message)])
+
             await self.bot.bridge.send(room=roomname, message=message, platform='revolt')
             await self.bot.bridge.send(room=roomname, message=message, platform='discord')
             for platform in self.bot.config['external']:
                 if platform == 'revolt':
                     continue
                 await self.bot.bridge.send(room=roomname, message=message, platform=platform)
+
+            if should_delete:
+                await message.delete()
 
         async def on_message_update(self, before, message):
             if message.author.id==self.user.id:
