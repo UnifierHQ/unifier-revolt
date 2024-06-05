@@ -16,8 +16,8 @@ You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-import discord
-from discord.ext import commands
+import nextcord
+from nextcord.ext import commands
 from revolt.ext import commands as rv_commands
 import asyncio
 import aiohttp
@@ -40,7 +40,7 @@ load_dotenv() # Do not check success
 if not "TOKEN_REVOLT" in os.environ:
     raise RuntimeError('No Revolt token found')
 
-mentions = discord.AllowedMentions(everyone=False, roles=False, users=False)
+mentions = nextcord.AllowedMentions(everyone=False, roles=False, users=False)
 
 def encrypt_string(hash_string):
     sha_signature = \
@@ -304,7 +304,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                             text = f'{text}\n{index}. {rule}'
                         index += 1
                 text = f'{text}\n\nPlease display these rules somewhere accessible.'
-                embed = discord.Embed(title='Please agree to the room rules first:', description=text)
+                embed = nextcord.Embed(title='Please agree to the room rules first:', description=text)
                 embed.set_footer(text='Failure to follow room rules may result in user or server restrictions.')
                 msg = await ctx.send('Please send "I agree" to bind to the room.',embed=embed)
 
