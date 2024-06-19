@@ -176,7 +176,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 emojified = True
                 should_delete = True
 
-            if not message.server.get_member(self.bot.user.id).get_channel_permissions(message.channel).manage_messages:
+            if not message.server.get_member(self.user.id).get_channel_permissions(message.channel).manage_messages:
                 if emojified or is_pr_ref:
                     return await message.channel.send(
                         'Parent message could not be deleted. I may be missing the `Manage Messages` permission.'
