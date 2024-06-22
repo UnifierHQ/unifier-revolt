@@ -22,7 +22,6 @@ from revolt.ext import commands as rv_commands
 import asyncio
 import aiohttp
 import revolt
-import json
 import traceback
 import time
 from utils import log
@@ -31,9 +30,7 @@ import random
 import string
 from dotenv import load_dotenv
 import os
-
-with open('config.json', 'r') as file:
-    data = json.load(file)
+import emoji as pymoji
 
 load_dotenv() # Do not check success
 
@@ -46,17 +43,6 @@ def encrypt_string(hash_string):
     sha_signature = \
         hashlib.sha256(hash_string.encode()).hexdigest()
     return sha_signature
-
-def is_user_admin(id):
-    try:
-        global admin_ids
-        if id in admin_ids:
-            return True
-        else:
-            return False
-    except:
-        print("There was an error in 'is_user_admin(id)', for security reasons permission was resulted into denying!")
-        return False
 
 def is_room_restricted(room,db):
     try:
@@ -120,6 +106,42 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         async def on_ready(self):
             self.logger.info('Revolt client booted!')
+
+        async def on_raw_reaction_add(self, event):
+            try:
+                msg = await self.bot.bridge.fetch_message(event['id'])
+            except:
+                return
+
+            if event['user_id'] in self.bot.db['fullbanned']:
+                return
+
+            emoji = event['emoji_id']
+            if pymoji.is_emoji(emoji):
+                pass
+            else:
+                emoji = await self.fetch_emoji(event['emoji_id'])
+                emoji = f'<r:{emoji.name}:{emoji.id}>'
+
+            await msg.add_reaction(emoji, event['user_id'], platform='revolt')
+
+        async def on_raw_reaction_remove(self, event):
+            try:
+                msg = await self.bot.bridge.fetch_message(event['id'])
+            except:
+                return
+
+            if event['user_id'] in self.bot.db['fullbanned']:
+                return
+
+            emoji = event['emoji_id']
+            if pymoji.is_emoji(emoji):
+                pass
+            else:
+                emoji = await self.fetch_emoji(event['emoji_id'])
+                emoji = f'<r:{emoji.name}:{emoji.id}>'
+
+            await msg.remove_reaction(emoji, event['user_id'])
 
         async def on_message(self, message):
             roomname = None
@@ -264,10 +286,10 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         @rv_commands.command(aliases=['connect','federate'])
         async def bind(self,ctx,*,room):
-            if not ctx.author.get_permissions().manage_channel and not is_user_admin(ctx.author.id):
+            if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
                 return await ctx.send('You don\'t have the necessary permissions.')
-            if is_room_restricted(room, self.bot.db) and not is_user_admin(ctx.author.id):
-                return await ctx.send('Only Green and ItsAsheer can bind channels to restricted rooms.')
+            if is_room_restricted(room, self.bot.db) and not ctx.author.id in self.bot.admins:
+                return await ctx.send('Only admins can bind channels to restricted rooms.')
             if room == '' or not room:  # Added "not room" as a failback
                 room = 'main'
                 await ctx.send('**No room was given, defaulting to main**')
@@ -335,7 +357,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         async def unbind(self, ctx, *, room=''):
             if room == '':
                 return await ctx.send('You must specify the room to unbind from.')
-            if not ctx.author.get_permissions().manage_channel and not is_user_admin(ctx.author.id):
+            if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
                 return await ctx.send('You don\'t have the necessary permissions.')
             try:
                 data = self.bot.db['rooms_revolt'][room]
