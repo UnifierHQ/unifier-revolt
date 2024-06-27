@@ -162,15 +162,21 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     self.bot.db.save_data()
                 else:
                     return
-            if message.server.id in f'{self.bot.db["banned"]}':
-                if t >= self.bot.db["banned"][message.server.id]:
-                    self.bot.db["banned"].pop(message.server.id)
-                    self.bot.db.save_data()
-                else:
-                    return
+
+            is_dm = False
+            try:
+                if message.server.id in f'{self.bot.db["banned"]}':
+                    if t >= self.bot.db["banned"][message.server.id]:
+                        self.bot.db["banned"].pop(message.server.id)
+                        self.bot.db.save_data()
+                    else:
+                        return
+            except LookupError:
+                is_dm = True
+
             if message.content.startswith(self.bot.command_prefix):
                 return await self.process_commands(message)
-            if not roomname:
+            if not roomname or is_dm:
                 return
 
             try:
