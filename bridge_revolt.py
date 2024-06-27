@@ -744,8 +744,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     self.logger.info('Booting Revolt client...')
                     try:
                         await self.bot.revolt_client.start()
-                    except:
-                        self.logger.exception('Revolt client failed to boot!')
+                    except Exception as e:
+                        if not type(Exception) is RuntimeError or not str(e)=='Session is closed':
+                            self.logger.exception('Revolt client failed to boot!')
                         break
                 self.logger.warn('Revolt client has exited. Rebooting in 10 seconds...')
                 try:
