@@ -31,6 +31,7 @@ import string
 from dotenv import load_dotenv
 import os
 import emoji as pymoji
+import datetime
 
 load_dotenv() # Do not check success
 
@@ -208,8 +209,103 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     message.content.lower().startswith('unifier not working')):
                 await message.channel.send('no', replies=[revolt.MessageReply(message)])
 
-            await self.bot.bridge.send(room=roomname, message=message, platform='revolt')
-            await self.bot.bridge.send(room=roomname, message=message, platform='discord')
+            tasks = []
+            parent_id = None
+            multisend = True
+
+            if message.content.startswith('['):
+                parts = message.content.replace('[', '', 1).replace('\n', ' ').split('] ', 1)
+                if len(parts) > 1 and len(parts[0]) == 6:
+                    if (parts[0].lower() == 'newest' or parts[0].lower() == 'recent' or
+                            parts[0].lower() == 'latest'):
+                        multisend = False
+                    elif parts[0].lower() in list(self.bot.bridge.prs.keys()):
+                        multisend = False
+
+            pr_roomname = self.bot.config['posts_room']
+            pr_ref_roomname = self.bot.config['posts_ref_room']
+            is_pr = roomname == pr_roomname and (
+                self.bot.config['allow_prs'] if 'allow_prs' in list(self.bot.config.keys()) else False or
+                                                                                                 self.bot.config[
+                                                                                                     'allow_posts'] if 'allow_posts' in list(
+                    self.bot.config.keys()) else False
+            )
+            is_pr_ref = roomname == pr_ref_roomname and (
+                self.bot.config['allow_prs'] if 'allow_prs' in list(self.bot.config.keys()) else False or
+                                                                                                 self.bot.config[
+                                                                                                     'allow_posts'] if 'allow_posts' in list(
+                    self.bot.config.keys()) else False
+            )
+
+            should_resend = False
+
+            if is_pr or is_pr_ref:
+                multisend = False
+                should_resend = True
+
+            if multisend:
+                # Multisend
+                # Sends Revolt message along with other platforms to minimize
+                # latency on external platforms.
+                self.bot.bridge.bridged.append(self.bot.bridge.UnifierMessage(
+                    author_id=message.author.id,
+                    guild_id=message.server.id,
+                    channel_id=message.channel.id,
+                    original=message.id,
+                    copies={},
+                    external_copies={},
+                    urls={},
+                    source='revolt',
+                    room=roomname,
+                    external_urls={},
+                    external_bridged=False
+                ))
+                if datetime.datetime.now().day != self.bot.bridge.msg_stats_reset:
+                    self.bot.bridge.msg_stats_reset = datetime.datetime.now().day
+                    self.bot.bridge.msg_stats = {}
+                try:
+                    self.bot.bridge.msg_stats[roomname] += 1
+                except:
+                    self.bot.bridge.msg_stats.update({roomname: 1})
+                tasks.append(self.bot.loop.create_task(
+                    self.bot.bridge.send(room=roomname, message=message, platform='revolt', extbridge=False))
+                )
+            else:
+                parent_id = await self.bot.bridge.send(room=roomname, message=message, platform='revolt',
+                                                       extbridge=False)
+
+            if should_resend and parent_id == message.id:
+                tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                    room=roomname, message=message, platform='discord', extbridge=False, id_override=parent_id
+                )))
+            else:
+                tasks.append(self.bot.loop.create_task(
+                    self.bot.bridge.send(room=roomname, message=message, platform='discord', extbridge=False)
+                ))
+
+            for platform in self.bot.config['external']:
+                if platform=='revolt':
+                    continue
+                if should_resend and parent_id == message.id:
+                    tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                        room=roomname, message=message, platform=platform, extbridge=False, id_override=parent_id
+                    )))
+                else:
+                    tasks.append(self.bot.loop.create_task(
+                        self.bot.bridge.send(room=roomname, message=message, platform=platform, extbridge=False)
+                    ))
+
+            try:
+                await asyncio.gather(*tasks)
+            except:
+                self.logger.exception('Something went wrong!')
+                experiments = []
+                for experiment in self.bot.db['experiments']:
+                    if message.server.id in self.bot.db['experiments'][experiment]:
+                        experiments.append(experiment)
+                self.logger.info(f'Experiments: {experiments}')
+                pass
+
             for platform in self.bot.config['external']:
                 if platform == 'revolt':
                     continue
