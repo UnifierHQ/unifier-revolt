@@ -2,7 +2,7 @@
 Unifier Revolt Support extension for Unifier bot
 
 > [!NOTE]
-> This is a Unifier **plugin**! To access Unifier, go [here](https://github.com/greeeen-dev/unifier).
+> This is a Unifier **plugin**! To access Unifier, go [here](https://github.com/UnifierHQ/unifier).
 
 ## What is this?
 This is a plugin for Unifier which allows it to work on Revolt, a Discord alternative. This plugin manages the Revolt 
