@@ -585,58 +585,39 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 except:
                     traceback.print_exc()
                     return await ctx.send('Invalid message!')
-            hookfound = False
-            for key in self.bot.db['rooms_revolt']:
-                room_guilds = self.bot.db['rooms_revolt'][key]
-                if f'{msg.channel.id}' in f'{room_guilds}':
-                    hookfound = True
-                    break
-            if not hookfound:
-                return await ctx.send('I didn\'t forward this!')
-            identifier = msg.author.name.split('(')
-            identifier = identifier[len(identifier) - 1].replace(')', '')
-            username = msg.author.name[:-9]
-            if identifier == 'system':
-                return await ctx.send('This is a system message.')
-            found = False
-            origin_guild = None
-            origin_user = None
-            for guild in self.bot.guilds:
-                hashed = encrypt_string(f'{guild.id}')
-                guildhash = identifier[3:]
-                if hashed.startswith(guildhash):
-                    origin_guild = guild
-                    userhash = identifier[:-3]
-                    try:
-                        matches = list(filter(lambda x: encrypt_string(f'{x.id}').startswith(userhash), guild.members))
-                        if len(matches) == 1:
-                            origin_user = matches[0]
-                        else:
-                            if len(matches) == 0:
-                                raise ValueError()
-                            text = f'Found multiple matches for {origin_guild.name} ({origin_guild.id})'
-                            for match in matches:
-                                text = text + '\n{match} ({match.id})'
-                            return await ctx.send(text)
-                        found = True
-                    except:
-                        continue
-
-            if found:
-                await ctx.send(f'{origin_user} ({origin_user.id}) via {origin_guild.name} ({origin_guild.id})')
+            try:
+                msg_obj = await self.bot.bridge.fetch_message(msg.id)
+            except:
+                return await ctx.send('Could not find message in cache!')
+            if msg_obj.source == 'discord':
+                try:
+                    username = self.bot.get_user(int(msg_obj.author_id)).name
+                except:
+                    username = '[unknown]'
+                try:
+                    guildname = self.bot.get_guild(int(msg_obj.guild_id)).name
+                except:
+                    guildname = '[unknown]'
+            elif msg_obj.source == 'revolt':
+                try:
+                    username = self.get_user(msg_obj.author_id).name
+                except:
+                    username = '[unknown]'
+                try:
+                    guildname = self.get_server(msg_obj.guild_id).name
+                except:
+                    guildname = '[unknown]'
             else:
-                for guild in self.servers:
-                    hashed = encrypt_string(f'{guild.id}')
-                    guildhash = identifier[3:]
-                    if hashed.startswith(guildhash):
-                        for member in guild.members:
-                            hashed = encrypt_string(f'{member.id}')
-                            userhash = identifier[:-3]
-                            if hashed.startswith(userhash):
-                                return await ctx.send(
-                                    f'{member.name} ({member.id}) via {guild.name} ({guild.id}, Revolt)')
-
-                await ctx.send('Could not identify user!')
+                try:
+                    username = self.bot.guilded_client.get_user(msg_obj.author_id).name
+                except:
+                    username = '[unknown]'
+                try:
+                    guildname = self.bot.guilded_client.get_server(msg_obj.guild_id).name
+                except:
+                    guildname = '[unknown]'
+            await ctx.send(
+                f'Sent by @{username} ({msg_obj.author_id}) in {guildname} ({msg_obj.guild_id}, {msg_obj.source})\n\nParent ID: {msg_obj.id}')
 
         @rv_commands.command(aliases=['colour'])
         async def color(self, ctx, *, color=''):
