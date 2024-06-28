@@ -722,11 +722,6 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         async def about(self,ctx):
             await ctx.send('**Unifier for Revolt**\nVersion 1.0.0, made by Green')
 
-        #async def on_command_error(self, ctx, error):
-            # Error logging because asyncio is too stubborn
-            #print(type(error))
-            #traceback.print_exc()
-
     async def revolt_boot(self):
         if self.bot.revolt_client is None:
             self.logger.info('Syncing Revolt rooms...')
@@ -747,7 +742,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     except Exception as e:
                         if not type(e) is RuntimeError or not str(e)=='Session is closed':
                             self.logger.exception('Revolt client failed to boot!')
-                        break
+                        else:
+                            break
                 self.logger.warn('Revolt client has exited. Rebooting in 10 seconds...')
                 try:
                     await asyncio.sleep(10)
