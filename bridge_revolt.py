@@ -173,8 +173,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                         return
             except LookupError:
                 is_dm = True
-
-            if message.content.startswith(self.bot.command_prefix):
+            if message.content==f'{self.bot.command_prefix}agree':
+                return
+            elif message.content.startswith(self.bot.command_prefix):
                 return await self.process_commands(message)
             if not roomname or is_dm:
                 return
