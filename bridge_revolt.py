@@ -430,7 +430,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 text = f'{text}\n\nPlease display these rules somewhere accessible.'
                 embed = nextcord.Embed(title='Please agree to the room rules first:', description=text)
                 embed.set_footer(text='Failure to follow room rules may result in user or server restrictions.')
-                msg = await ctx.send('Please send "I agree" to bind to the room.',embed=embed)
+                msg = await ctx.send(f'Please send "{self.bot.command_prefix}agree" to bind to the room.',embed=embed)
 
                 def check(message):
                     return message.author.id == ctx.author.id
@@ -439,7 +439,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     resp = await self.wait_for("message", check=check, timeout=60.0)
                 except:
                     return await ctx.send('Timed out.')
-                if not resp.content.lower()=='i agree':
+                if not resp.content.lower()==f'{self.bot.command_prefix}agree':
                     return await ctx.send('Cancelled.')
                 data = self.bot.db['rooms_revolt'][room]
                 guild = [ctx.channel.id]
