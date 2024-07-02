@@ -2,8 +2,8 @@
   "id": "revolt",
   "name": "Revolt Support",
   "description": "Unifier Revolt Support extension",
-  "version": "v1.2.0-patch2",
-  "release": 10,
+  "version": "v1.2.0-patch3",
+  "release": 11,
   "minimum": 58,
   "shutdown": true,
   "modules": [
