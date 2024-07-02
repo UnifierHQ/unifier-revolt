@@ -313,11 +313,6 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 self.logger.info(f'Experiments: {experiments}')
                 pass
 
-            for platform in self.bot.config['external']:
-                if platform == 'revolt':
-                    continue
-                await self.bot.bridge.send(room=roomname, message=message, platform=platform)
-
             if should_delete:
                 await message.delete()
 
