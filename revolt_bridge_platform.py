@@ -47,6 +47,9 @@ class RevoltPlatform(platform_base.PlatformBase):
     def member(self, message: revolt.Message):
         return message.author
 
+    def attachments(self, message):
+        return message.attachments
+
     def get_id(self, obj):
         return obj.id
 
@@ -67,6 +70,18 @@ class RevoltPlatform(platform_base.PlatformBase):
 
     def attachment_type(self, attachment):
         return attachment.content_type
+
+    def convert_embeds(self, embeds):
+        for i in range(len(embeds)):
+            embed = revolt.SendableEmbed(
+                title=embeds[i].title,
+                description=embeds[i].description,
+                url=embeds[i].url,
+                colour=embeds[i].colour,
+                icon_url=embeds[i].thumbnail.url
+            )
+            embeds[i] = embed
+        return embeds
 
     async def fetch_server(self, server_id):
         return await self.bot.fetch_server(server_id)
@@ -192,19 +207,28 @@ class RevoltPlatform(platform_base.PlatformBase):
                 avatar=special['bridge']['avatar'] if 'avatar' in special['bridge'].keys() else None,
                 colour=to_color(special['bridge']['color']) if 'color' in special['bridge'].keys() else None
             )
-        msg = await channel.send(
-            content,
-            embeds=special['embeds'] if 'embeds' in special.keys() else None,
-            files=special['files'] if 'files' in special.keys() else None,
-            replies=[revolt.MessageReply(special['reply'])] if special['reply'] else [],
-            masquerade=persona
-        )
+        if not special:
+            msg = await channel.send(content)
+        else:
+            msg = await channel.send(
+                content,
+                embeds=special['embeds'] if 'embeds' in special.keys() else None,
+                attachments=special['files'] if 'files' in special.keys() else None,
+                replies=[revolt.MessageReply(special['reply'])] if special['reply'] else [],
+                masquerade=persona
+            )
         return msg
 
     async def edit(self, message, content, special: dict = None):
-        await message.edit(
-            content, embeds=special['embeds'], files=special['files'], replies=[revolt.MessageReply(special['reply'])]
-        )
+        if not special:
+            await message.edit(
+                content=content
+            )
+        else:
+            await message.edit(
+                content=content,
+                embeds=special['embeds'] if 'embeds' in special.keys() else None
+            )
 
     async def delete(self, message):
         await message.delete()
