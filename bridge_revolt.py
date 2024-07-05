@@ -94,6 +94,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             super().__init__(*args, **kwargs)
             self.bot = None
             self.logger = None
+            self.compatibility_mode = False
 
         def add_bot(self,bot):
             """Adds a Discord bot to the Revolt client."""
@@ -107,6 +108,18 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         async def on_ready(self):
             self.logger.info('Revolt client booted!')
+            if not hasattr(self.bot, 'platforms_former'):
+                self.compatibility_mode = True
+                return
+            if 'revolt' in self.bot.platforms.keys():
+                self.bot.platforms['revolt'].attach_bot(self)
+            else:
+                while not 'revolt' in self.bot.platforms_former.keys():
+                    # wait until support plugin has been loaded
+                    await asyncio.sleep(1)
+                self.bot.platforms.update(
+                    {'revolt':self.bot.platforms_former['revolt'].RevoltPlatform(self,self.bot)}
+                )
 
         async def on_raw_reaction_add(self, event):
             try:
@@ -254,19 +267,33 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 # Multisend
                 # Sends Revolt message along with other platforms to minimize
                 # latency on external platforms.
-                self.bot.bridge.bridged.append(self.bot.bridge.UnifierMessage(
-                    author_id=message.author.id,
-                    guild_id=message.server.id,
-                    channel_id=message.channel.id,
-                    original=message.id,
-                    copies={},
-                    external_copies={},
-                    urls={},
-                    source='revolt',
-                    room=roomname,
-                    external_urls={},
-                    external_bridged=False
-                ))
+                if self.compatibility_mode:
+                    self.bot.bridge.bridged.append(self.bot.bridge.UnifierMessage(
+                        author_id=message.author.id,
+                        guild_id=message.server.id,
+                        channel_id=message.channel.id,
+                        original=message.id,
+                        copies={},
+                        external_copies={},
+                        urls={},
+                        room=roomname,
+                        external_urls={},
+                        external_bridged=False
+                    ))
+                else:
+                    self.bot.bridge.bridged.append(self.bot.bridge.UnifierMessage(
+                        author_id=message.author.id,
+                        guild_id=message.server.id,
+                        channel_id=message.channel.id,
+                        original=message.id,
+                        copies={},
+                        external_copies={},
+                        urls={},
+                        source='revolt',
+                        room=roomname,
+                        external_urls={},
+                        external_bridged=False
+                    ))
                 if datetime.datetime.now().day != self.bot.bridge.msg_stats_reset:
                     self.bot.bridge.msg_stats_reset = datetime.datetime.now().day
                     self.bot.bridge.msg_stats = {}
@@ -274,33 +301,74 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     self.bot.bridge.msg_stats[roomname] += 1
                 except:
                     self.bot.bridge.msg_stats.update({roomname: 1})
-                tasks.append(self.bot.loop.create_task(
-                    self.bot.bridge.send(room=roomname, message=message, platform='revolt', extbridge=False))
-                )
-            else:
-                parent_id = await self.bot.bridge.send(room=roomname, message=message, platform='revolt',
-                                                       extbridge=False)
-
-            if should_resend and parent_id == message.id:
-                tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
-                    room=roomname, message=message, platform='discord', extbridge=False, id_override=parent_id
-                )))
-            else:
-                tasks.append(self.bot.loop.create_task(
-                    self.bot.bridge.send(room=roomname, message=message, platform='discord', extbridge=False)
-                ))
-
-            for platform in self.bot.config['external']:
-                if platform=='revolt':
-                    continue
-                if should_resend and parent_id == message.id:
-                    tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
-                        room=roomname, message=message, platform=platform, extbridge=False, id_override=parent_id
-                    )))
+                if self.compatibility_mode:
+                    tasks.append(self.bot.loop.create_task(
+                        self.bot.bridge.send(room=roomname, message=message, platform='revolt',
+                                             extbridge=False)
+                    ))
                 else:
                     tasks.append(self.bot.loop.create_task(
-                        self.bot.bridge.send(room=roomname, message=message, platform=platform, extbridge=False)
+                        self.bot.bridge.send(room=roomname, message=message, source='revolt', platform='revolt',
+                                             extbridge=False)
                     ))
+            else:
+                if self.compatibility_mode:
+                    parent_id = await self.bot.bridge.send(room=roomname, message=message,
+                                                           platform='revolt',
+                                                           extbridge=False)
+                else:
+                    parent_id = await self.bot.bridge.send(room=roomname, message=message, source='revolt',
+                                                           platform='revolt',
+                                                           extbridge=False)
+
+            if should_resend and parent_id == message.id:
+                if self.compatibility_mode:
+                    tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                        room=roomname, message=message, platform='discord', extbridge=False,
+                        id_override=parent_id
+                    )))
+                else:
+                    tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                        room=roomname, message=message, source='revolt', platform='discord', extbridge=False,
+                        id_override=parent_id
+                    )))
+            else:
+                if self.compatibility_mode:
+                    tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                        room=roomname, message=message, platform='discord',
+                        extbridge=False
+                    )))
+                else:
+                    tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                        room=roomname, message=message, source='revolt', platform='discord',
+                        extbridge=False
+                    )))
+
+            for platform in self.bot.config['external']:
+                if platform == 'revolt':
+                    continue
+                if should_resend and parent_id == message.id:
+                    if self.compatibility_mode:
+                        tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                            room=roomname, message=message, platform=platform, extbridge=False,
+                            id_override=parent_id
+                        )))
+                    else:
+                        tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                            room=roomname, message=message, source='revolt', platform=platform, extbridge=False,
+                            id_override=parent_id
+                        )))
+                else:
+                    if self.compatibility_mode:
+                        tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                            room=roomname, message=message, platform=platform,
+                            extbridge=False
+                        )))
+                    else:
+                        tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                            room=roomname, message=message, source='revolt', platform=platform,
+                            extbridge=False
+                        )))
 
             try:
                 await asyncio.gather(*tasks)
