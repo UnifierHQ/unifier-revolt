@@ -655,8 +655,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         @rv_commands.command()
         async def nickname(self, ctx, *, nickname=''):
-            if len(nickname) > 23:
-                return await ctx.send('Please keep your nickname within 23 characters.')
+            if len(nickname) > 30:
+                return await ctx.send('Please keep your nickname within 30 characters.')
             if len(nickname) == 0:
                 self.bot.db['nicknames'].pop(f'{ctx.author.id}', None)
             else:
