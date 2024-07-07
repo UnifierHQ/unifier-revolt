@@ -32,6 +32,7 @@ from dotenv import load_dotenv
 import os
 import emoji as pymoji
 import datetime
+import re
 
 load_dotenv() # Do not check success
 
@@ -94,6 +95,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             super().__init__(*args, **kwargs)
             self.bot = None
             self.logger = None
+            self.compatibility_mode = False
 
         def add_bot(self,bot):
             """Adds a Discord bot to the Revolt client."""
@@ -107,6 +109,18 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         async def on_ready(self):
             self.logger.info('Revolt client booted!')
+            if not hasattr(self.bot, 'platforms_former'):
+                self.compatibility_mode = True
+                return
+            if 'revolt' in self.bot.platforms.keys():
+                self.bot.platforms['revolt'].attach_bot(self)
+            else:
+                while not 'revolt' in self.bot.platforms_former.keys():
+                    # wait until support plugin has been loaded
+                    await asyncio.sleep(1)
+                self.bot.platforms.update(
+                    {'revolt':self.bot.platforms_former['revolt'].RevoltPlatform(self,self.bot)}
+                )
 
         async def on_raw_reaction_add(self, event):
             try:
@@ -146,11 +160,20 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         async def on_message(self, message):
             roomname = None
-            for key in self.bot.db['rooms_revolt']:
+            if self.compatibility_mode:
+                roomkey = 'rooms_revolt'
+            else:
+                roomkey = 'rooms'
+            for key in self.bot.db[roomkey]:
                 try:
-                    if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
-                        roomname = key
-                        break
+                    if self.compatibility_mode:
+                        if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
+                            roomname = key
+                            break
+                    else:
+                        if message.channel.id in str(self.bot.db['rooms'][key]['revolt'][message.server.id]):
+                            roomname = key
+                            break
                 except:
                     pass
             if message.author.id==self.user.id:
@@ -254,19 +277,33 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 # Multisend
                 # Sends Revolt message along with other platforms to minimize
                 # latency on external platforms.
-                self.bot.bridge.bridged.append(self.bot.bridge.UnifierMessage(
-                    author_id=message.author.id,
-                    guild_id=message.server.id,
-                    channel_id=message.channel.id,
-                    original=message.id,
-                    copies={},
-                    external_copies={},
-                    urls={},
-                    source='revolt',
-                    room=roomname,
-                    external_urls={},
-                    external_bridged=False
-                ))
+                if self.compatibility_mode:
+                    self.bot.bridge.bridged.append(self.bot.bridge.UnifierMessage(
+                        author_id=message.author.id,
+                        guild_id=message.server.id,
+                        channel_id=message.channel.id,
+                        original=message.id,
+                        copies={},
+                        external_copies={},
+                        urls={},
+                        room=roomname,
+                        external_urls={},
+                        external_bridged=False
+                    ))
+                else:
+                    self.bot.bridge.bridged.append(self.bot.bridge.UnifierMessage(
+                        author_id=message.author.id,
+                        guild_id=message.server.id,
+                        channel_id=message.channel.id,
+                        original=message.id,
+                        copies={},
+                        external_copies={},
+                        urls={},
+                        source='revolt',
+                        room=roomname,
+                        external_urls={},
+                        external_bridged=False
+                    ))
                 if datetime.datetime.now().day != self.bot.bridge.msg_stats_reset:
                     self.bot.bridge.msg_stats_reset = datetime.datetime.now().day
                     self.bot.bridge.msg_stats = {}
@@ -274,33 +311,74 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     self.bot.bridge.msg_stats[roomname] += 1
                 except:
                     self.bot.bridge.msg_stats.update({roomname: 1})
-                tasks.append(self.bot.loop.create_task(
-                    self.bot.bridge.send(room=roomname, message=message, platform='revolt', extbridge=False))
-                )
-            else:
-                parent_id = await self.bot.bridge.send(room=roomname, message=message, platform='revolt',
-                                                       extbridge=False)
-
-            if should_resend and parent_id == message.id:
-                tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
-                    room=roomname, message=message, platform='discord', extbridge=False, id_override=parent_id
-                )))
-            else:
-                tasks.append(self.bot.loop.create_task(
-                    self.bot.bridge.send(room=roomname, message=message, platform='discord', extbridge=False)
-                ))
-
-            for platform in self.bot.config['external']:
-                if platform=='revolt':
-                    continue
-                if should_resend and parent_id == message.id:
-                    tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
-                        room=roomname, message=message, platform=platform, extbridge=False, id_override=parent_id
-                    )))
+                if self.compatibility_mode:
+                    tasks.append(self.bot.loop.create_task(
+                        self.bot.bridge.send(room=roomname, message=message, platform='revolt',
+                                             extbridge=False)
+                    ))
                 else:
                     tasks.append(self.bot.loop.create_task(
-                        self.bot.bridge.send(room=roomname, message=message, platform=platform, extbridge=False)
+                        self.bot.bridge.send(room=roomname, message=message, source='revolt', platform='revolt',
+                                             extbridge=False)
                     ))
+            else:
+                if self.compatibility_mode:
+                    parent_id = await self.bot.bridge.send(room=roomname, message=message,
+                                                           platform='revolt',
+                                                           extbridge=False)
+                else:
+                    parent_id = await self.bot.bridge.send(room=roomname, message=message, source='revolt',
+                                                           platform='revolt',
+                                                           extbridge=False)
+
+            if should_resend and parent_id == message.id:
+                if self.compatibility_mode:
+                    tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                        room=roomname, message=message, platform='discord', extbridge=False,
+                        id_override=parent_id
+                    )))
+                else:
+                    tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                        room=roomname, message=message, source='revolt', platform='discord', extbridge=False,
+                        id_override=parent_id
+                    )))
+            else:
+                if self.compatibility_mode:
+                    tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                        room=roomname, message=message, platform='discord',
+                        extbridge=False
+                    )))
+                else:
+                    tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                        room=roomname, message=message, source='revolt', platform='discord',
+                        extbridge=False
+                    )))
+
+            for platform in self.bot.config['external']:
+                if platform == 'revolt':
+                    continue
+                if should_resend and parent_id == message.id:
+                    if self.compatibility_mode:
+                        tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                            room=roomname, message=message, platform=platform, extbridge=False,
+                            id_override=parent_id
+                        )))
+                    else:
+                        tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                            room=roomname, message=message, source='revolt', platform=platform, extbridge=False,
+                            id_override=parent_id
+                        )))
+                else:
+                    if self.compatibility_mode:
+                        tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                            room=roomname, message=message, platform=platform,
+                            extbridge=False
+                        )))
+                    else:
+                        tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
+                            room=roomname, message=message, source='revolt', platform=platform,
+                            extbridge=False
+                        )))
 
             try:
                 await asyncio.gather(*tasks)
@@ -320,11 +398,20 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             if message.author.id==self.user.id:
                 return
             roomname = None
-            for key in self.bot.db['rooms_revolt']:
+            if self.compatibility_mode:
+                roomkey = 'rooms_revolt'
+            else:
+                roomkey = 'rooms'
+            for key in self.bot.db[roomkey]:
                 try:
-                    if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
-                        roomname = key
-                        break
+                    if self.compatibility_mode:
+                        if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
+                            roomname = key
+                            break
+                    else:
+                        if message.channel.id in str(self.bot.db['rooms'][key]['revolt'][message.server.id]):
+                            roomname = key
+                            break
                 except:
                     pass
             if not roomname:
@@ -349,11 +436,20 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         async def on_message_delete(self, message):
             roomname = None
-            for key in self.bot.db['rooms_revolt']:
+            if self.compatibility_mode:
+                roomkey = 'rooms_revolt'
+            else:
+                roomkey = 'rooms'
+            for key in self.bot.db[roomkey]:
                 try:
-                    if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
-                        roomname = key
-                        break
+                    if self.compatibility_mode:
+                        if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
+                            roomname = key
+                            break
+                    else:
+                        if message.channel.id in str(self.bot.db['rooms'][key]['revolt'][message.server.id]):
+                            roomname = key
+                            break
                 except:
                     continue
             if not roomname:
@@ -382,6 +478,147 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
             await self.bot.bridge.delete_copies(msgdata.id)
 
+        @rv_commands.command()
+        async def addmod(self, ctx, *, userid):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
+            user = self.get_user(userid)
+            if not user:
+                return await ctx.send('Not a valid user!')
+            if userid in self.bot.db['moderators']:
+                return await ctx.send('This user is already a moderator!')
+            if userid in self.bot.admins or user.bot:
+                return await ctx.send('are you fr')
+            self.bot.db['moderators'].append(userid)
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send(f'**{user.name}#{user.discriminator}** is now a moderator!')
+
+        @rv_commands.command(aliases=['remmod', 'delmod'])
+        async def delmod(self, ctx, *, userid):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
+            user = self.get_user(userid)
+            if not user:
+                return await ctx.send('Not a valid user!')
+            if not userid in self.bot.db['moderators']:
+                return await ctx.send('This user is not a moderator!')
+            if userid in self.bot.admins or user.bot:
+                return await ctx.send('are you fr')
+            self.bot.db['moderators'].remove(userid)
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send(f'**{user.name}#{user.discriminator}** is no longer a moderator!')
+
+        @rv_commands.command()
+        async def make(self,ctx,*,room):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            room = room.lower()
+            if not bool(re.match("^[A-Za-z0-9_-]*$", room)):
+                return await ctx.send(f'Room names may only contain alphabets, numbers, dashes, and underscores.')
+            if room in list(self.bot.db['rooms'].keys()):
+                return await ctx.send(f'This room already exists!')
+            self.bot.db['rooms'].update({room: {}})
+            self.bot.db['rules'].update({room: []})
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send(f'Created room `{room}`!')
+
+        @rv_commands.command()
+        async def addrule(self, ctx, room, *, rule):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            room = room.lower()
+            if not room in list(self.bot.db['rules'].keys()):
+                return await ctx.send(
+                    'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a full list of rooms.'
+                )
+            if len(self.bot.db['rules'][room]) >= 25:
+                return await ctx.send('You can only have up to 25 rules in a room!')
+            self.bot.db['rules'][room].append(rule)
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send('Added rule!')
+
+        @rv_commands.command()
+        async def delrule(self, ctx, room, *, rule):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            room = room.lower()
+            try:
+                rule = int(rule)
+                if rule <= 0:
+                    raise ValueError()
+            except:
+                return await ctx.send('Rule must be a number higher than 0.')
+            if not room in list(self.bot.db['rules'].keys()):
+                return await ctx.send(
+                    'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a full list of rooms.'
+                )
+            self.bot.db['rules'][room].pop(rule - 1)
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send('Removed rule!')
+
+        @rv_commands.command()
+        async def roomrestrict(self, ctx, room):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            room = room.lower()
+            if not room in list(self.bot.db['rooms'].keys()):
+                return await ctx.send('This room does not exist!')
+            if room in self.bot.db['restricted']:
+                self.bot.db['restricted'].remove(room)
+                await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+                await ctx.send(f'Unrestricted `{room}`!')
+            else:
+                self.bot.db['restricted'].append(room)
+                await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+                await ctx.send(f' Restricted `{room}`!')
+
+        @rv_commands.command()
+        async def roomlock(self, ctx, room):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            room = room.lower()
+            if not room in list(self.bot.db['rooms'].keys()):
+                return await ctx.send('This room does not exist!')
+            if room in self.bot.db['locked']:
+                self.bot.db['locked'].remove(room)
+                await ctx.send(f'Unlocked `{room}`!')
+            else:
+                self.bot.db['locked'].append(room)
+                await ctx.send(f'Locked `{room}`!')
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+
+        @rv_commands.command()
+        async def rename(self, ctx, room, newroom):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            newroom = newroom.lower()
+            if not room.lower() in list(self.bot.db['rooms'].keys()):
+                return await ctx.send('This room does not exist!')
+            if not bool(re.match("^[A-Za-z0-9_-]*$", newroom)):
+                return await ctx.send('Room names may only contain alphabets, numbers, dashes, and underscores.')
+            if newroom in list(self.bot.db['rooms'].keys()):
+                return await ctx.send('This room already exists!')
+            self.bot.db['rooms'].update({newroom: self.bot.db['rooms'][room]})
+            self.bot.db['rules'].update({newroom: self.bot.db['rules'][room]})
+            self.bot.db['rooms'].pop(room)
+            self.bot.db['rules'].pop(room)
+            if room in self.bot.db['restricted']:
+                self.bot.db['restricted'].remove(room)
+                self.bot.db['restricted'].append(newroom)
+            if room in self.bot.db['locked']:
+                self.bot.db['locked'].remove(room)
+                self.bot.db['locked'].append(newroom)
+            if room in self.bot.db['roomemojis'].keys():
+                self.bot.db['roomemojis'].update({newroom: self.bot.db['roomemojis'][room]})
+                self.bot.db['roomemojis'].pop(room)
+            if room in self.bot.db['rooms_revolt'].keys():
+                self.bot.db['rooms_revolt'].update({newroom: self.bot.db['rooms_revolt'][room]})
+                self.bot.db['rooms_revolt'].pop(room)
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send('Room renamed!')
+
         @rv_commands.command(aliases=['connect','federate'])
         async def bind(self,ctx,*,room):
             if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
@@ -395,10 +632,17 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 data = self.bot.db['rooms'][room]
             except:
                 return await ctx.send(f'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
-            for roomname in list(self.bot.db['rooms_revolt'].keys()):
+            if self.compatibility_mode:
+                roomkey = 'rooms_revolt'
+            else:
+                roomkey = 'rooms'
+            for roomname in list(self.bot.db[roomkey].keys()):
                 # Prevent duplicate binding
                 try:
-                    channel = self.bot.db['rooms_revolt'][roomname][f'{ctx.guild.id}'][0]
+                    if self.compatibility_mode:
+                        channel = self.bot.db[roomkey][roomname][f'{ctx.guild.id}'][0]
+                    else:
+                        channel = self.bot.db[roomkey][roomname]['revolt'][f'{ctx.guild.id}'][0]
                     if channel == ctx.channel.id:
                         return await ctx.send(
                             f'This channel is already linked to `{roomname}`!\nRun `{self.bot.command_prefix}unbind {roomname}` to unbind from it.')
@@ -437,10 +681,19 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     return await ctx.send('Timed out.')
                 if not resp.content.lower()==f'{self.bot.command_prefix}agree':
                     return await ctx.send('Cancelled.')
-                data = self.bot.db['rooms_revolt'][room]
+                if self.compatibility_mode:
+                    data = self.bot.db['rooms_revolt'][room]
+                else:
+                    try:
+                        data = self.bot.db['rooms'][room]['revolt']
+                    except:
+                        self.bot.db['rooms'][room].update({'revolt':[]})
                 guild = [ctx.channel.id]
                 data.update({f'{ctx.server.id}': guild})
-                self.bot.db['rooms_revolt'][room] = data
+                if self.compatibility_mode:
+                    self.bot.db['rooms_revolt'][room] = data
+                else:
+                    self.bot.db['rooms'][room]['revolt'] = data
                 self.bot.db.save_data()
                 await ctx.send('Linked channel with network!')
                 try:
@@ -458,12 +711,18 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
                 return await ctx.send('You don\'t have the necessary permissions.')
             try:
-                data = self.bot.db['rooms_revolt'][room]
+                if self.compatibility_mode:
+                    data = self.bot.db['rooms_revolt'][room]
+                else:
+                    data = self.bot.db['rooms'][room]['revolt']
             except:
                 return await ctx.send('This isn\'t a valid room.')
             try:
                 data.pop(f'{ctx.server.id}')
-                self.bot.db['rooms_revolt'][room] = data
+                if self.compatibility_mode:
+                    self.bot.db['rooms_revolt'][room] = data
+                else:
+                    self.bot.db['rooms'][room]['revolt'] = data
                 self.bot.db.save_data()
                 await ctx.send('Unlinked channel from network!')
             except:
@@ -655,8 +914,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         @rv_commands.command()
         async def nickname(self, ctx, *, nickname=''):
-            if len(nickname) > 23:
-                return await ctx.send('Please keep your nickname within 23 characters.')
+            if len(nickname) > 30:
+                return await ctx.send('Please keep your nickname within 30 characters.')
             if len(nickname) == 0:
                 self.bot.db['nicknames'].pop(f'{ctx.author.id}', None)
             else:
@@ -701,12 +960,14 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
     async def revolt_boot(self):
         if self.bot.revolt_client is None:
-            self.logger.info('Syncing Revolt rooms...')
-            for key in self.bot.db['rooms']:
-                if not key in list(self.bot.db['rooms_revolt'].keys()):
-                    self.bot.db['rooms_revolt'].update({key: {}})
-                    self.logger.debug('Synced room '+key)
-            self.bot.db.save_data()
+            if not hasattr(self.bot, 'platforms_former'):
+                self.logger.warning('Revolt Support is starting in legacy mode (non-NUPS).')
+                self.logger.info('Syncing Revolt rooms...')
+                for key in self.bot.db['rooms']:
+                    if not key in list(self.bot.db['rooms_revolt'].keys()):
+                        self.bot.db['rooms_revolt'].update({key: {}})
+                        self.logger.debug('Synced room '+key)
+                self.bot.db.save_data()
             while True:
                 async with aiohttp.ClientSession() as session:
                     self.bot.revolt_session = session

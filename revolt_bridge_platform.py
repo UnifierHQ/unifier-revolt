@@ -92,8 +92,7 @@ class RevoltPlatform(platform_base.PlatformBase):
     async def fetch_message(self, channel, message_id):
         return await channel.fetch_message(message_id)
 
-    async def make_friendly(self, message: revolt.Message):
-        text = message.content
+    async def make_friendly(self, text):
         if text.startswith(':') and text.endswith(':'):
             try:
                 emoji_id = text.replace(':', '', 1)[:-1]
@@ -200,8 +199,8 @@ class RevoltPlatform(platform_base.PlatformBase):
             name = special['bridge']['name']
             if len(name) > 32:
                 name = name[:-(len(name)-32)]
-            if 'useremoji' in special['bridge'].keys():
-                name = name[:-2] + ' ' + special['bridge']['useremoji']
+            if 'emoji' in special['bridge'].keys():
+                name = name[:-2] + ' ' + special['bridge']['emoji']
             persona = revolt.Masquerade(
                 name=name,
                 avatar=special['bridge']['avatar'] if 'avatar' in special['bridge'].keys() else None,
