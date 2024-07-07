@@ -277,33 +277,19 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 # Multisend
                 # Sends Revolt message along with other platforms to minimize
                 # latency on external platforms.
-                if self.compatibility_mode:
-                    self.bot.bridge.bridged.append(self.bot.bridge.UnifierMessage(
-                        author_id=message.author.id,
-                        guild_id=message.server.id,
-                        channel_id=message.channel.id,
-                        original=message.id,
-                        copies={},
-                        external_copies={},
-                        urls={},
-                        room=roomname,
-                        external_urls={},
-                        external_bridged=False
-                    ))
-                else:
-                    self.bot.bridge.bridged.append(self.bot.bridge.UnifierMessage(
-                        author_id=message.author.id,
-                        guild_id=message.server.id,
-                        channel_id=message.channel.id,
-                        original=message.id,
-                        copies={},
-                        external_copies={},
-                        urls={},
-                        source='revolt',
-                        room=roomname,
-                        external_urls={},
-                        external_bridged=False
-                    ))
+                self.bot.bridge.bridged.append(self.bot.bridge.UnifierMessage(
+                    author_id=message.author.id,
+                    guild_id=message.server.id,
+                    channel_id=message.channel.id,
+                    original=message.id,
+                    copies={},
+                    external_copies={},
+                    urls={},
+                    source='revolt',
+                    room=roomname,
+                    external_urls={},
+                    external_bridged=False
+                ))
                 if datetime.datetime.now().day != self.bot.bridge.msg_stats_reset:
                     self.bot.bridge.msg_stats_reset = datetime.datetime.now().day
                     self.bot.bridge.msg_stats = {}
