@@ -32,6 +32,7 @@ from dotenv import load_dotenv
 import os
 import emoji as pymoji
 import datetime
+import re
 
 load_dotenv() # Do not check success
 
@@ -159,11 +160,20 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         async def on_message(self, message):
             roomname = None
-            for key in self.bot.db['rooms_revolt']:
+            if self.compatibility_mode:
+                roomkey = 'rooms_revolt'
+            else:
+                roomkey = 'rooms'
+            for key in self.bot.db[roomkey]:
                 try:
-                    if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
-                        roomname = key
-                        break
+                    if self.compatibility_mode:
+                        if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
+                            roomname = key
+                            break
+                    else:
+                        if message.channel.id in str(self.bot.db['rooms'][key]['revolt'][message.server.id]):
+                            roomname = key
+                            break
                 except:
                     pass
             if message.author.id==self.user.id:
@@ -388,11 +398,20 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             if message.author.id==self.user.id:
                 return
             roomname = None
-            for key in self.bot.db['rooms_revolt']:
+            if self.compatibility_mode:
+                roomkey = 'rooms_revolt'
+            else:
+                roomkey = 'rooms'
+            for key in self.bot.db[roomkey]:
                 try:
-                    if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
-                        roomname = key
-                        break
+                    if self.compatibility_mode:
+                        if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
+                            roomname = key
+                            break
+                    else:
+                        if message.channel.id in str(self.bot.db['rooms'][key]['revolt'][message.server.id]):
+                            roomname = key
+                            break
                 except:
                     pass
             if not roomname:
@@ -417,11 +436,20 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         async def on_message_delete(self, message):
             roomname = None
-            for key in self.bot.db['rooms_revolt']:
+            if self.compatibility_mode:
+                roomkey = 'rooms_revolt'
+            else:
+                roomkey = 'rooms'
+            for key in self.bot.db[roomkey]:
                 try:
-                    if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
-                        roomname = key
-                        break
+                    if self.compatibility_mode:
+                        if message.channel.id in str(self.bot.db['rooms_revolt'][key][message.server.id]):
+                            roomname = key
+                            break
+                    else:
+                        if message.channel.id in str(self.bot.db['rooms'][key]['revolt'][message.server.id]):
+                            roomname = key
+                            break
                 except:
                     continue
             if not roomname:
@@ -450,6 +478,18 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
             await self.bot.bridge.delete_copies(msgdata.id)
 
+        @rv_commands.command()
+        async def make(self,ctx,*,room):
+            room = room.lower()
+            if not bool(re.match("^[A-Za-z0-9_-]*$", room)):
+                return await ctx.send(f'Room names may only contain alphabets, numbers, dashes, and underscores.')
+            if room in list(self.bot.db['rooms'].keys()):
+                return await ctx.send(f'This room already exists!')
+            self.bot.db['rooms'].update({room: {}})
+            self.bot.db['rules'].update({room: []})
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send(f'Created room `{room}`!')
+
         @rv_commands.command(aliases=['connect','federate'])
         async def bind(self,ctx,*,room):
             if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
@@ -463,10 +503,17 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 data = self.bot.db['rooms'][room]
             except:
                 return await ctx.send(f'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
-            for roomname in list(self.bot.db['rooms_revolt'].keys()):
+            if self.compatibility_mode:
+                roomkey = 'rooms_revolt'
+            else:
+                roomkey = 'rooms'
+            for roomname in list(self.bot.db[roomkey].keys()):
                 # Prevent duplicate binding
                 try:
-                    channel = self.bot.db['rooms_revolt'][roomname][f'{ctx.guild.id}'][0]
+                    if self.compatibility_mode:
+                        channel = self.bot.db[roomkey][roomname][f'{ctx.guild.id}'][0]
+                    else:
+                        channel = self.bot.db[roomkey][roomname]['revolt'][f'{ctx.guild.id}'][0]
                     if channel == ctx.channel.id:
                         return await ctx.send(
                             f'This channel is already linked to `{roomname}`!\nRun `{self.bot.command_prefix}unbind {roomname}` to unbind from it.')
@@ -505,10 +552,19 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     return await ctx.send('Timed out.')
                 if not resp.content.lower()==f'{self.bot.command_prefix}agree':
                     return await ctx.send('Cancelled.')
-                data = self.bot.db['rooms_revolt'][room]
+                if self.compatibility_mode:
+                    data = self.bot.db['rooms_revolt'][room]
+                else:
+                    try:
+                        data = self.bot.db['rooms'][room]['revolt']
+                    except:
+                        self.bot.db['rooms'][room].update({'revolt':[]})
                 guild = [ctx.channel.id]
                 data.update({f'{ctx.server.id}': guild})
-                self.bot.db['rooms_revolt'][room] = data
+                if self.compatibility_mode:
+                    self.bot.db['rooms_revolt'][room] = data
+                else:
+                    self.bot.db['rooms'][room]['revolt'] = data
                 self.bot.db.save_data()
                 await ctx.send('Linked channel with network!')
                 try:
@@ -526,12 +582,18 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
                 return await ctx.send('You don\'t have the necessary permissions.')
             try:
-                data = self.bot.db['rooms_revolt'][room]
+                if self.compatibility_mode:
+                    data = self.bot.db['rooms_revolt'][room]
+                else:
+                    data = self.bot.db['rooms'][room]['revolt']
             except:
                 return await ctx.send('This isn\'t a valid room.')
             try:
                 data.pop(f'{ctx.server.id}')
-                self.bot.db['rooms_revolt'][room] = data
+                if self.compatibility_mode:
+                    self.bot.db['rooms_revolt'][room] = data
+                else:
+                    self.bot.db['rooms'][room]['revolt'] = data
                 self.bot.db.save_data()
                 await ctx.send('Unlinked channel from network!')
             except:
@@ -769,12 +831,14 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
     async def revolt_boot(self):
         if self.bot.revolt_client is None:
-            self.logger.info('Syncing Revolt rooms...')
-            for key in self.bot.db['rooms']:
-                if not key in list(self.bot.db['rooms_revolt'].keys()):
-                    self.bot.db['rooms_revolt'].update({key: {}})
-                    self.logger.debug('Synced room '+key)
-            self.bot.db.save_data()
+            if not hasattr(self.bot, 'platforms_former'):
+                self.logger.warning('Revolt Support is starting in legacy mode (non-NUPS).')
+                self.logger.info('Syncing Revolt rooms...')
+                for key in self.bot.db['rooms']:
+                    if not key in list(self.bot.db['rooms_revolt'].keys()):
+                        self.bot.db['rooms_revolt'].update({key: {}})
+                        self.logger.debug('Synced room '+key)
+                self.bot.db.save_data()
             while True:
                 async with aiohttp.ClientSession() as session:
                     self.bot.revolt_session = session
