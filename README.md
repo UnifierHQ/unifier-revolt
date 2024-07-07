@@ -1,5 +1,7 @@
-# Unifier Revolt Support
-Unifier Revolt Support extension for Unifier bot
+<h1 align=center>
+  <img width=64 src=https://github.com/UnifierHQ/unifier/assets/41323182/3065245a-28b6-4410-9b07-8b940f4796ae><br>
+Unifier Revolt Support</h1>
+<p align=center>A Unifier Plugin that lets Unifier work on Revolt.</p>
 
 > [!NOTE]
 > This is a Unifier **plugin**! To access Unifier, go [here](https://github.com/UnifierHQ/unifier).

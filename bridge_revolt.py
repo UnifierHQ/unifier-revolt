@@ -897,12 +897,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     embed_color = 'rgb'+str(tuple(int(embed_color[i:i + 2], 16) for i in (0, 2, 4)))
                 except:
                     embed_color = None
-                embed = revolt.SendableEmbed(title='Your Unifier color', description=current_color, colour=embed_color)
+                embed = revolt.SendableEmbed(title='Your Revolt color', description=current_color, colour=embed_color)
                 await ctx.send(embeds=[embed])
             elif color == 'inherit':
                 self.bot.db['colors'].update({f'{ctx.author.id}': 'inherit'})
                 self.bot.db.save_data()
-                await ctx.send('Supported platforms will now inherit your Revolt role color.')
+                await ctx.send('Your Revolt messages will now inherit your Revolt role color.')
             else:
                 try:
                     tuple(int(color.replace('#', '', 1)[i:i + 2], 16) for i in (0, 2, 4))
@@ -910,7 +910,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     return await ctx.send('Invalid hex code!')
                 self.bot.db['colors'].update({f'{ctx.author.id}': color})
                 self.bot.db.save_data()
-                await ctx.send('Supported platforms will now inherit the custom color.')
+                await ctx.send('Your Revolt messages will now inherit the custom color.')
 
         @rv_commands.command()
         async def nickname(self, ctx, *, nickname=''):
