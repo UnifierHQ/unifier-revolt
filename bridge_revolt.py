@@ -479,7 +479,41 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             await self.bot.bridge.delete_copies(msgdata.id)
 
         @rv_commands.command()
+        async def addmod(self, ctx, *, userid):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
+            user = self.get_user(userid)
+            if not user:
+                return await ctx.send('Not a valid user!')
+            if userid in self.bot.db['moderators']:
+                return await ctx.send('This user is already a moderator!')
+            if userid in self.bot.admins or user.bot:
+                return await ctx.send('are you fr')
+            self.bot.db['moderators'].append(userid)
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send(f'**{user.name}#{user.discriminator}** is now a moderator!')
+
+        @rv_commands.command(aliases=['remmod', 'delmod'])
+        async def delmod(self, ctx, *, userid):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
+            user = self.get_user(userid)
+            if not user:
+                return await ctx.send('Not a valid user!')
+            if not userid in self.bot.db['moderators']:
+                return await ctx.send('This user is not a moderator!')
+            if userid in self.bot.admins or user.bot:
+                return await ctx.send('are you fr')
+            self.bot.db['moderators'].remove(userid)
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send(f'**{user.name}#{user.discriminator}** is no longer a moderator!')
+
+        @rv_commands.command()
         async def make(self,ctx,*,room):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
             room = room.lower()
             if not bool(re.match("^[A-Za-z0-9_-]*$", room)):
                 return await ctx.send(f'Room names may only contain alphabets, numbers, dashes, and underscores.')
@@ -489,6 +523,101 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             self.bot.db['rules'].update({room: []})
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send(f'Created room `{room}`!')
+
+        @rv_commands.command()
+        async def addrule(self, ctx, room, *, rule):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            room = room.lower()
+            if not room in list(self.bot.db['rules'].keys()):
+                return await ctx.send(
+                    'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a full list of rooms.'
+                )
+            if len(self.bot.db['rules'][room]) >= 25:
+                return await ctx.send('You can only have up to 25 rules in a room!')
+            self.bot.db['rules'][room].append(rule)
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send('Added rule!')
+
+        @rv_commands.command()
+        async def delrule(self, ctx, room, *, rule):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            room = room.lower()
+            try:
+                rule = int(rule)
+                if rule <= 0:
+                    raise ValueError()
+            except:
+                return await ctx.send('Rule must be a number higher than 0.')
+            if not room in list(self.bot.db['rules'].keys()):
+                return await ctx.send(
+                    'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a full list of rooms.'
+                )
+            self.bot.db['rules'][room].pop(rule - 1)
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send('Removed rule!')
+
+        @rv_commands.command()
+        async def roomrestrict(self, ctx, room):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            room = room.lower()
+            if not room in list(self.bot.db['rooms'].keys()):
+                return await ctx.send('This room does not exist!')
+            if room in self.bot.db['restricted']:
+                self.bot.db['restricted'].remove(room)
+                await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+                await ctx.send(f'Unrestricted `{room}`!')
+            else:
+                self.bot.db['restricted'].append(room)
+                await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+                await ctx.send(f' Restricted `{room}`!')
+
+        @rv_commands.command()
+        async def roomlock(self, ctx, room):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            room = room.lower()
+            if not room in list(self.bot.db['rooms'].keys()):
+                return await ctx.send('This room does not exist!')
+            if room in self.bot.db['locked']:
+                self.bot.db['locked'].remove(room)
+                await ctx.send(f'Unlocked `{room}`!')
+            else:
+                self.bot.db['locked'].append(room)
+                await ctx.send(f'Locked `{room}`!')
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+
+        @rv_commands.command()
+        async def rename(self, ctx, room, newroom):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            newroom = newroom.lower()
+            if not room.lower() in list(self.bot.db['rooms'].keys()):
+                return await ctx.send('This room does not exist!')
+            if not bool(re.match("^[A-Za-z0-9_-]*$", newroom)):
+                return await ctx.send('Room names may only contain alphabets, numbers, dashes, and underscores.')
+            if newroom in list(self.bot.db['rooms'].keys()):
+                return await ctx.send('This room already exists!')
+            self.bot.db['rooms'].update({newroom: self.bot.db['rooms'][room]})
+            self.bot.db['rules'].update({newroom: self.bot.db['rules'][room]})
+            self.bot.db['rooms'].pop(room)
+            self.bot.db['rules'].pop(room)
+            if room in self.bot.db['restricted']:
+                self.bot.db['restricted'].remove(room)
+                self.bot.db['restricted'].append(newroom)
+            if room in self.bot.db['locked']:
+                self.bot.db['locked'].remove(room)
+                self.bot.db['locked'].append(newroom)
+            if room in self.bot.db['roomemojis'].keys():
+                self.bot.db['roomemojis'].update({newroom: self.bot.db['roomemojis'][room]})
+                self.bot.db['roomemojis'].pop(room)
+            if room in self.bot.db['rooms_revolt'].keys():
+                self.bot.db['rooms_revolt'].update({newroom: self.bot.db['rooms_revolt'][room]})
+                self.bot.db['rooms_revolt'].pop(room)
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send('Room renamed!')
 
         @rv_commands.command(aliases=['connect','federate'])
         async def bind(self,ctx,*,room):
