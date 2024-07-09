@@ -29,6 +29,9 @@ class RevoltPlatform(platform_base.PlatformBase):
         super().__init__(*args, **kwargs)
         self.enable_tb = False
 
+    def bot_id(self):
+        return self.bot.user.id
+
     def get_server(self, server_id):
         return self.bot.get_server(server_id)
 
@@ -44,8 +47,17 @@ class RevoltPlatform(platform_base.PlatformBase):
     def content(self, message: revolt.Message):
         return message.content
 
-    def member(self, message: revolt.Message):
+    def reply(self, message: revolt.Message):
+        try:
+            return message.replies[0]
+        except:
+            return message.reply_ids[0]
+
+    def author(self, message: revolt.Message):
         return message.author
+
+    def embeds(self, message):
+        return message.embeds
 
     def attachments(self, message):
         return message.attachments
@@ -78,8 +90,23 @@ class RevoltPlatform(platform_base.PlatformBase):
                 description=embeds[i].description,
                 url=embeds[i].url,
                 colour=embeds[i].colour,
-                icon_url=embeds[i].thumbnail.url
+                icon_url=(
+                    embeds[i].author.icon_url if embeds[i].author else embeds[i].thumbnail.url if embeds[i].thumbnail
+                    else None
+                )
             )
+            embeds[i] = embed
+        return embeds
+
+    def convert_embeds_discord(self, embeds):
+        for i in range(len(embeds)):
+            embed = nextcord.Embed(
+                title=embeds[i].title,
+                description=embeds[i].description,
+                url=embeds[i].url,
+                colour=embeds[i].colour
+            )
+            embed.set_thumbnail(url=embeds[i].icon_url)
             embeds[i] = embed
         return embeds
 
