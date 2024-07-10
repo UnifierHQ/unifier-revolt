@@ -198,7 +198,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 is_dm = True
             if message.content==f'{self.bot.command_prefix}agree':
                 return
-            elif message.content.startswith(self.bot.command_prefix):
+            elif message.content.startswith(self.bot.command_prefix) and not message.author.bot:
                 return await self.process_commands(message)
             if not roomname or is_dm:
                 return
