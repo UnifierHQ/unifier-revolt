@@ -41,8 +41,8 @@ class RevoltPlatform(platform_base.PlatformBase):
     def channel(self, message: revolt.Message):
         return message.channel
 
-    def server(self, message: revolt.Message):
-        return message.server
+    def server(self, obj):
+        return obj.server
 
     def content(self, message: revolt.Message):
         return message.content
