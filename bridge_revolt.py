@@ -505,9 +505,13 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 return await ctx.send(f'Room names may only contain alphabets, numbers, dashes, and underscores.')
             if room in list(self.bot.db['rooms'].keys()):
                 return await ctx.send(f'This room already exists!')
-            self.bot.db['rooms'].update({room: {}})
-            self.bot.db['rules'].update({room: []})
-            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            if self.compatibility_mode:
+                self.bot.db['rooms'].update({room: {}})
+                self.bot.db['rooms_revolt'].update({room: {}})
+                self.bot.db['rules'].update({room: []})
+                self.bot.db.save_data()
+            else:
+                self.bot.bridge.create_room(room, private=False)
             await ctx.send(f'Created room `{room}`!')
 
         @rv_commands.command()
@@ -515,13 +519,20 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             if not ctx.author.id in self.bot.admins:
                 return await ctx.send('You do not have the permissions to run this command.')
             room = room.lower()
-            if not room in list(self.bot.db['rules'].keys()):
+            if not room in list(self.bot.db['rooms'].keys()):
                 return await ctx.send(
-                    'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a full list of rooms.'
+                    f'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a full list of rooms.'
                 )
-            if len(self.bot.db['rules'][room]) >= 25:
+            if self.compatibility_mode:
+                rules = self.bot.db['rules'][room]
+            else:
+                rules = self.bot.db['rooms'][room]['meta']['rules']
+            if len(rules) >= 25:
                 return await ctx.send('You can only have up to 25 rules in a room!')
-            self.bot.db['rules'][room].append(rule)
+            if self.compatibility_mode:
+                self.bot.db['rules'][room].append(rule)
+            else:
+                self.bot.db['rooms'][room]['meta']['rules'].append(rule)
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send('Added rule!')
 
@@ -536,11 +547,14 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     raise ValueError()
             except:
                 return await ctx.send('Rule must be a number higher than 0.')
-            if not room in list(self.bot.db['rules'].keys()):
+            if not room in list(self.bot.db['rooms'].keys()):
                 return await ctx.send(
                     'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a full list of rooms.'
                 )
-            self.bot.db['rules'][room].pop(rule - 1)
+            if self.compatibility_mode:
+                self.bot.db['rules'][room].pop(rule - 1)
+            else:
+                self.bot.db['rooms'][room]['meta']['rules'].pop(rule - 1)
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send('Removed rule!')
 
@@ -551,12 +565,22 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             room = room.lower()
             if not room in list(self.bot.db['rooms'].keys()):
                 return await ctx.send('This room does not exist!')
-            if room in self.bot.db['restricted']:
-                self.bot.db['restricted'].remove(room)
+            if self.compatibility_mode:
+                restricted = room in self.bot.db['restricted']
+            else:
+                restricted = self.bot.db['rooms'][room]['meta']['restricted']
+            if restricted:
+                if self.compatibility_mode:
+                    self.bot.db['restricted'].remove(room)
+                else:
+                    self.bot.db['rooms'][room]['meta']['restricted'] = False
                 await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
                 await ctx.send(f'Unrestricted `{room}`!')
             else:
-                self.bot.db['restricted'].append(room)
+                if self.compatibility_mode:
+                    self.bot.db['restricted'].append(room)
+                else:
+                    self.bot.db['rooms'][room]['meta']['restricted'] = True
                 await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
                 await ctx.send(f' Restricted `{room}`!')
 
@@ -567,11 +591,21 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             room = room.lower()
             if not room in list(self.bot.db['rooms'].keys()):
                 return await ctx.send('This room does not exist!')
-            if room in self.bot.db['locked']:
-                self.bot.db['locked'].remove(room)
+            if self.compatibility_mode:
+                locked = room in self.bot.db['locked']
+            else:
+                locked = self.bot.db['rooms'][room]['meta']['locked']
+            if locked:
+                if self.compatibility_mode:
+                    self.bot.db['locked'].remove(room)
+                else:
+                    self.bot.db['rooms'][room]['meta']['locked'] = False
                 await ctx.send(f'Unlocked `{room}`!')
             else:
-                self.bot.db['locked'].append(room)
+                if self.compatibility_mode:
+                    self.bot.db['locked'].append(room)
+                else:
+                    self.bot.db['rooms'][room]['meta']['locked'] = True
                 await ctx.send(f'Locked `{room}`!')
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
 
@@ -587,21 +621,22 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             if newroom in list(self.bot.db['rooms'].keys()):
                 return await ctx.send('This room already exists!')
             self.bot.db['rooms'].update({newroom: self.bot.db['rooms'][room]})
-            self.bot.db['rules'].update({newroom: self.bot.db['rules'][room]})
             self.bot.db['rooms'].pop(room)
-            self.bot.db['rules'].pop(room)
-            if room in self.bot.db['restricted']:
-                self.bot.db['restricted'].remove(room)
-                self.bot.db['restricted'].append(newroom)
-            if room in self.bot.db['locked']:
-                self.bot.db['locked'].remove(room)
-                self.bot.db['locked'].append(newroom)
-            if room in self.bot.db['roomemojis'].keys():
-                self.bot.db['roomemojis'].update({newroom: self.bot.db['roomemojis'][room]})
-                self.bot.db['roomemojis'].pop(room)
-            if room in self.bot.db['rooms_revolt'].keys():
-                self.bot.db['rooms_revolt'].update({newroom: self.bot.db['rooms_revolt'][room]})
-                self.bot.db['rooms_revolt'].pop(room)
+            if self.compatibility_mode:
+                self.bot.db['rules'].update({newroom: self.bot.db['rules'][room]})
+                self.bot.db['rules'].pop(room)
+                if room in self.bot.db['restricted']:
+                    self.bot.db['restricted'].remove(room)
+                    self.bot.db['restricted'].append(newroom)
+                if room in self.bot.db['locked']:
+                    self.bot.db['locked'].remove(room)
+                    self.bot.db['locked'].append(newroom)
+                if room in self.bot.db['roomemojis'].keys():
+                    self.bot.db['roomemojis'].update({newroom: self.bot.db['roomemojis'][room]})
+                    self.bot.db['roomemojis'].pop(room)
+                if room in self.bot.db['rooms_revolt'].keys():
+                    self.bot.db['rooms_revolt'].update({newroom: self.bot.db['rooms_revolt'][room]})
+                    self.bot.db['rooms_revolt'].pop(room)
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send('Room renamed!')
 
@@ -622,18 +657,31 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 roomkey = 'rooms_revolt'
             else:
                 roomkey = 'rooms'
-            for roomname in list(self.bot.db[roomkey].keys()):
-                # Prevent duplicate binding
-                try:
-                    if self.compatibility_mode:
-                        channel = self.bot.db[roomkey][roomname][f'{ctx.guild.id}'][0]
-                    else:
-                        channel = self.bot.db[roomkey][roomname]['revolt'][f'{ctx.guild.id}'][0]
-                    if channel == ctx.channel.id:
-                        return await ctx.send(
-                            f'This channel is already linked to `{roomname}`!\nRun `{self.bot.command_prefix}unbind {roomname}` to unbind from it.')
-                except:
-                    continue
+                if data['meta']['private']:
+                    return await ctx.send('Private Rooms are not supported yet!')
+
+            duplicate = None
+            if self.compatibility_mode:
+                for roomname in list(self.bot.db[roomkey].keys()):
+                    # Prevent duplicate binding
+                    try:
+                        if self.compatibility_mode:
+                            channel = self.bot.db[roomkey][roomname][f'{ctx.guild.id}'][0]
+                        else:
+                            channel = self.bot.db[roomkey][roomname]['revolt'][f'{ctx.guild.id}'][0]
+                        if channel == ctx.channel.id:
+                            duplicate = roomname
+                            break
+                    except:
+                        continue
+            else:
+                duplicate = self.bot.bridge.check_duplicate(ctx.channel, platform='revolt')
+
+            if duplicate:
+                return await ctx.send(
+                    f'This channel is already linked to `{duplicate}`!\nRun `{self.bot.command_prefix}unbind {duplicate}` to unbind from it.'
+                )
+
             try:
                 try:
                     guild = data[f'{ctx.guild.id}']
@@ -644,10 +692,15 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                         f'Your server is already linked to this room.\n**Accidentally deleted the webhook?** `{self.bot.command_prefix}unlink` it then `{self.bot.command_prefix}link` it back.')
                 index = 0
                 text = ''
-                if len(self.bot.db['rules'][room]) == 0:
+
+                if self.compatibility_mode:
+                    rules = self.bot.db['rules'][room]
+                else:
+                    rules = self.bot.db['rooms'][room]['meta']['rules']
+                if len(rules) == 0:
                     text = f'No rules exist yet for this room! For now, follow the main room\'s rules.\nYou can always view rules if any get added using `{self.bot.command_prefix}rules {room}`.'
                 else:
-                    for rule in self.bot.db['rules'][room]:
+                    for rule in rules:
                         if text == '':
                             text = f'1. {rule}'
                         else:
@@ -668,19 +721,10 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 if not resp.content.lower()==f'{self.bot.command_prefix}agree':
                     return await ctx.send('Cancelled.')
                 if self.compatibility_mode:
-                    data = self.bot.db['rooms_revolt'][room]
+                    self.bot.db['rooms_revolt'][room].update({f'{ctx.server.id}': [ctx.channel.id]})
+                    self.bot.db.save_data()
                 else:
-                    try:
-                        data = self.bot.db['rooms'][room]['revolt']
-                    except:
-                        self.bot.db['rooms'][room].update({'revolt':[]})
-                guild = [ctx.channel.id]
-                data.update({f'{ctx.server.id}': guild})
-                if self.compatibility_mode:
-                    self.bot.db['rooms_revolt'][room] = data
-                else:
-                    self.bot.db['rooms'][room]['revolt'] = data
-                self.bot.db.save_data()
+                    await self.bot.bridge.join_room(ctx.author, room, ctx.channel, platform='revolt')
                 await ctx.send('Linked channel with network!')
                 try:
                     await msg.pin()
@@ -696,20 +740,14 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 return await ctx.send('You must specify the room to unbind from.')
             if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
                 return await ctx.send('You don\'t have the necessary permissions.')
-            try:
-                if self.compatibility_mode:
-                    data = self.bot.db['rooms_revolt'][room]
-                else:
-                    data = self.bot.db['rooms'][room]['revolt']
-            except:
+            if not room in self.bot.db['rooms'].keys():
                 return await ctx.send('This isn\'t a valid room.')
             try:
-                data.pop(f'{ctx.server.id}')
                 if self.compatibility_mode:
-                    self.bot.db['rooms_revolt'][room] = data
+                    self.bot.db['rooms_revolt'][room].pop(f'{ctx.server.id}')
+                    self.bot.db.save_data()
                 else:
-                    self.bot.db['rooms'][room]['revolt'] = data
-                self.bot.db.save_data()
+                    await self.bot.bridge.leave_room(ctx.server, room, platform='revolt')
                 await ctx.send('Unlinked channel from network!')
             except:
                 await ctx.send('Something went wrong - check my permissions.')
