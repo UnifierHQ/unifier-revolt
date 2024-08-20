@@ -243,8 +243,10 @@ class RevoltPlatform(platform_base.PlatformBase):
             name = special['bridge']['name']
             if len(name) > 32:
                 name = name[:-(len(name)-32)]
-            if 'emoji' in special['bridge'].keys():
-                name = name[:-2] + ' ' + special['bridge']['emoji']
+                if 'emoji' in special['bridge'].keys():
+                    name = name[:-2] + ' ' + special['bridge']['emoji']
+            else:
+                name = name + ' ' + special['bridge']['emoji']
             persona = revolt.Masquerade(
                 name=name,
                 avatar=special['bridge']['avatar'] if 'avatar' in special['bridge'].keys() else None,
