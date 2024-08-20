@@ -46,9 +46,13 @@ def encrypt_string(hash_string):
         hashlib.sha256(hash_string.encode()).hexdigest()
     return sha_signature
 
-def is_room_restricted(room,db):
+def is_room_restricted(room,db,compatibility_mode):
     try:
-        if room in db['restricted']:
+        if compatibility_mode:
+            restricted = room in db['restricted']
+        else:
+            restricted = db['rooms'][room]['meta']['restricted']
+        if restricted:
             return True
         else:
             return False
@@ -56,9 +60,13 @@ def is_room_restricted(room,db):
         traceback.print_exc()
         return False
 
-def is_room_locked(room,db):
+def is_room_locked(room,db,compatibility_mode):
     try:
-        if room in db['locked']:
+        if compatibility_mode:
+            locked = room in db['locked']
+        else:
+            locked = db['rooms'][room]['meta']['locked']
+        if locked:
             return True
         else:
             return False
@@ -644,7 +652,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         async def bind(self,ctx,*,room):
             if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
                 return await ctx.send('You don\'t have the necessary permissions.')
-            if is_room_restricted(room, self.bot.db) and not ctx.author.id in self.bot.admins:
+            if is_room_restricted(room, self.bot.db, self.compatibility_mode) and not ctx.author.id in self.bot.admins:
                 return await ctx.send('Only admins can bind channels to restricted rooms.')
             if room == '' or not room:  # Added "not room" as a failback
                 room = 'main'
