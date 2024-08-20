@@ -74,6 +74,17 @@ class RevoltPlatform(platform_base.PlatformBase):
     def avatar(self, user):
         return user.avatar.url if user.avatar else None
 
+    def permissions(self, user, channel=False):
+        if channel:
+            user_perms = user.get_channel_permissions()
+        else:
+            user_perms = user.get_permissions()
+
+        permissions = platform_base.Permissions()
+        permissions.ban_members = user_perms.ban_members
+        permissions.manage_channels = user_perms.manage_channel
+        return permissions
+
     def is_bot(self, user):
         return user.bot
 
