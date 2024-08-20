@@ -245,7 +245,7 @@ class RevoltPlatform(platform_base.PlatformBase):
                 name = name[:-(len(name)-32)]
                 if 'emoji' in special['bridge'].keys():
                     name = name[:-2] + ' ' + special['bridge']['emoji']
-            else:
+            elif 'emoji' in special['bridge'].keys():
                 name = name + ' ' + special['bridge']['emoji']
             persona = revolt.Masquerade(
                 name=name,
