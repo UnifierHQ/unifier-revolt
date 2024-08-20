@@ -38,6 +38,12 @@ class RevoltPlatform(platform_base.PlatformBase):
     def get_channel(self, channel_id):
         return self.bot.get_channel(channel_id)
 
+    def get_user(self, user_id):
+        return self.bot.get_user(user_id)
+
+    def get_member(self, server, user_id):
+        return server.get_member(user_id)
+
     def channel(self, message: revolt.Message):
         return message.channel
 
