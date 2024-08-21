@@ -59,6 +59,12 @@ class RevoltPlatform(platform_base.PlatformBase):
         except:
             return message.reply_ids[0]
 
+    def roles(self, member):
+        return member.roles
+
+    def get_hex(self, role):
+        return role.colour.lower().replace('#','',1)
+
     def author(self, message: revolt.Message):
         return message.author
 
