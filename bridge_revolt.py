@@ -264,15 +264,11 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             pr_ref_roomname = self.bot.config['posts_ref_room']
             is_pr = roomname == pr_roomname and (
                 self.bot.config['allow_prs'] if 'allow_prs' in list(self.bot.config.keys()) else False or
-                                                                                                 self.bot.config[
-                                                                                                     'allow_posts'] if 'allow_posts' in list(
-                    self.bot.config.keys()) else False
+                self.bot.config['allow_posts'] if 'allow_posts' in list(self.bot.config.keys()) else False
             )
             is_pr_ref = roomname == pr_ref_roomname and (
                 self.bot.config['allow_prs'] if 'allow_prs' in list(self.bot.config.keys()) else False or
-                                                                                                 self.bot.config[
-                                                                                                     'allow_posts'] if 'allow_posts' in list(
-                    self.bot.config.keys()) else False
+                self.bot.config['allow_posts'] if 'allow_posts' in list(self.bot.config.keys()) else False
             )
 
             should_resend = False
