@@ -258,6 +258,14 @@ class RevoltPlatform(platform_base.PlatformBase):
                 avatar=special['bridge']['avatar'] if 'avatar' in special['bridge'].keys() else None,
                 colour=to_color(special['bridge']['color']) if 'color' in special['bridge'].keys() else None
             )
+
+            try:
+                me = channel.guild.get_member(self.bot.user.id)
+            except:
+                me = await channel.guild.fetch_member(self.bot.user.id)
+
+            if not me.get_permissions().manage_roles:
+                persona.colour = None
         if not special:
             msg = await channel.send(content)
         else:
