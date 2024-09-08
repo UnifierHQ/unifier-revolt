@@ -650,9 +650,6 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 return await ctx.send('You don\'t have the necessary permissions.')
             if is_room_restricted(room, self.bot.db, self.compatibility_mode) and not ctx.author.id in self.bot.admins:
                 return await ctx.send('Only admins can bind channels to restricted rooms.')
-            if room == '' or not room:  # Added "not room" as a failback
-                room = 'main'
-                await ctx.send('**No room was given, defaulting to main**')
             try:
                 data = self.bot.db['rooms'][room]
             except:
@@ -739,9 +736,12 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 raise
 
         @rv_commands.command(aliases=['unlink', 'disconnect'])
-        async def unbind(self, ctx, *, room=''):
-            if room == '':
-                return await ctx.send('You must specify the room to unbind from.')
+        async def unbind(self, ctx, *, room=None):
+            if not room:
+                # room autodetect
+                room = self.bot.bridge.check_duplicate(ctx.channel, platform='revolt')
+                if not room:
+                    return await ctx.send('This channel is not connected to a room.')
             if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
                 return await ctx.send('You don\'t have the necessary permissions.')
             if not room in self.bot.db['rooms'].keys():
