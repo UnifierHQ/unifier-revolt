@@ -229,7 +229,7 @@ class RevoltPlatform(platform_base.PlatformBase):
 
     async def to_discord_file(self, file):
         filebytes = await file.read()
-        return nextcord.File(fp=BytesIO(filebytes), filename=file.filename)
+        return nextcord.File(fp=BytesIO(filebytes), filename=file.filename, force_close=False)
 
     async def to_platform_file(self, file):
         f = await file.to_file(use_cached=True)
