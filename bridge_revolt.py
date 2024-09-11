@@ -739,7 +739,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         async def unbind(self, ctx, *, room=None):
             if not room:
                 # room autodetect
-                room = self.bot.bridge.check_duplicate(ctx.channel, platform='revolt')
+                if not self.compatibility_mode:
+                    room = self.bot.bridge.check_duplicate(ctx.channel, platform='revolt')
                 if not room:
                     return await ctx.send('This channel is not connected to a room.')
             if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
