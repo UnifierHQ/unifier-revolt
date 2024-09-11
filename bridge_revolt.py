@@ -656,6 +656,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 return await ctx.send(f'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
             if self.compatibility_mode:
                 roomkey = 'rooms_revolt'
+                if not room in self.bot.db['rooms_revolt'].keys():
+                    return await ctx.send(f'You need to run `{self.bot.command_prefix}restart-revolt` on Discord for this room to be available.')
             else:
                 roomkey = 'rooms'
                 if data['meta']['private']:
