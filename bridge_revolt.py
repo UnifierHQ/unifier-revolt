@@ -33,6 +33,7 @@ import os
 import emoji as pymoji
 import datetime
 import re
+import ujson as json
 
 load_dotenv() # Do not check success
 
@@ -987,7 +988,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         @rv_commands.command()
         async def about(self,ctx):
-            await ctx.send('**Unifier for Revolt**\nVersion 1.0.0, made by Green')
+            with open('plugins/revolt.json') as file:
+                pluginfo = json.load(file)
+            await ctx.send(f'**Unifier for Revolt**\nVersion {pluginfo["version"]}, made by Green')
 
     async def revolt_boot(self):
         if self.bot.revolt_client is None:
