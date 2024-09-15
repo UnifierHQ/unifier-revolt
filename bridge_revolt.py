@@ -656,20 +656,18 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             except:
                 return await ctx.send(f'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
             if self.compatibility_mode:
-                roomkey = 'rooms_revolt'
                 if not room in self.bot.db['rooms_revolt'].keys():
                     return await ctx.send(f'You need to run `{self.bot.command_prefix}restart-revolt` on Discord for this room to be available.')
             else:
-                roomkey = 'rooms'
                 if data['meta']['private']:
                     return await ctx.send('Private Rooms are not supported yet!')
 
             duplicate = None
             if self.compatibility_mode:
-                for roomname in list(self.bot.db[roomkey].keys()):
+                for roomname in list(self.bot.db['rooms_revolt'].keys()):
                     # Prevent duplicate binding
                     try:
-                        channel = self.bot.db[roomkey][roomname][f'{ctx.guild.id}'][0]
+                        channel = self.bot.db['rooms_revolt'][roomname][f'{ctx.guild.id}'][0]
                         if channel == ctx.channel.id:
                             duplicate = roomname
                             break
