@@ -74,6 +74,9 @@ class RevoltPlatform(platform_base.PlatformBase):
     def attachments(self, message):
         return message.attachments
 
+    def url(self, message):
+        return f'https://app.revolt.chat/server/{message.server.id}/channel/{message.channel.id}/{message.id}'
+
     def get_id(self, obj):
         return obj.id
 
@@ -82,6 +85,9 @@ class RevoltPlatform(platform_base.PlatformBase):
 
     def user_name(self, user):
         return user.name
+
+    def name(self, obj):
+        return obj.name
 
     def avatar(self, user):
         return user.avatar.url if user.avatar else None
