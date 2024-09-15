@@ -669,10 +669,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 for roomname in list(self.bot.db[roomkey].keys()):
                     # Prevent duplicate binding
                     try:
-                        if self.compatibility_mode:
-                            channel = self.bot.db[roomkey][roomname][f'{ctx.guild.id}'][0]
-                        else:
-                            channel = self.bot.db[roomkey][roomname]['revolt'][f'{ctx.guild.id}'][0]
+                        channel = self.bot.db[roomkey][roomname][f'{ctx.guild.id}'][0]
                         if channel == ctx.channel.id:
                             duplicate = roomname
                             break
