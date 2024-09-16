@@ -275,11 +275,18 @@ class RevoltPlatform(platform_base.PlatformBase):
         if not special:
             msg = await channel.send(content)
         else:
+            reply_id = None
+
+            try:
+                reply_id = special['reply']['revolt'][channel.server.id]
+            except:
+                pass
+
             msg = await channel.send(
                 content,
                 embeds=special['embeds'] if 'embeds' in special.keys() else None,
                 attachments=special['files'] if 'files' in special.keys() else None,
-                replies=[revolt.MessageReply(special['reply'])] if special['reply'] else [],
+                replies=[revolt.MessageReply(reply_id)] if reply_id else [],
                 masquerade=persona
             )
         return msg
