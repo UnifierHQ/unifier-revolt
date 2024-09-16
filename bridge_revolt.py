@@ -805,8 +805,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     traceback.print_exc()
                     await ctx.send('Something went wrong.')
 
-        @rv_commands.command(aliases=['ban'])
-        async def restrict(self, ctx, *, target):
+        @rv_commands.command()
+        async def block(self, ctx, *, target):
             if not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members:
                 return await ctx.send('You cannot restrict members/servers.')
             try:
@@ -834,7 +834,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             await ctx.send('User/server can no longer forward messages to this channel!')
 
         @rv_commands.command(aliases=['unban'])
-        async def unrestrict(self, ctx, *, target):
+        async def unblock(self, ctx, *, target):
             if not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members:
                 return await ctx.send('You cannot unrestrict members/servers.')
             try:
