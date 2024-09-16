@@ -276,11 +276,26 @@ class RevoltPlatform(platform_base.PlatformBase):
             msg = await channel.send(content)
         else:
             reply_id = None
+            reply = special.get('reply', None)
 
-            try:
-                reply_id = special['reply']['revolt'][channel.server.id]
-            except:
-                pass
+            if reply:
+                if type(reply) is revolt.Message:
+                    # noinspection PyUnresolvedReferences
+                    reply_id = reply.id
+                elif type(reply) is str:
+                    reply_id = reply
+                else:
+                    # probably UnifierMessage, if not then ignore
+                    try:
+                        # noinspection PyUnresolvedReferences
+                        if reply.source == 'revolt':
+                            # noinspection PyUnresolvedReferences
+                            reply_id = reply.copies[channel.server.id]
+                        else:
+                            # noinspection PyUnresolvedReferences
+                            reply_id = reply.external_copies['revolt'][channel.server.id]
+                    except:
+                        pass
 
             msg = await channel.send(
                 content,
