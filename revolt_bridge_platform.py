@@ -122,7 +122,7 @@ class RevoltPlatform(platform_base.PlatformBase):
                 title=embeds[i].title,
                 description=embeds[i].description,
                 url=embeds[i].url,
-                colour=embeds[i].colour,
+                colour=embeds[i].colour.value,
                 icon_url=(
                     embeds[i].author.icon_url if embeds[i].author else embeds[i].thumbnail.url if embeds[i].thumbnail
                     else None
@@ -138,7 +138,7 @@ class RevoltPlatform(platform_base.PlatformBase):
                 title=embeds[i].title,
                 description=embeds[i].description,
                 url=embeds[i].url,
-                colour=embeds[i].colour
+                # colour=embeds[i].colour.value (do this later)
             )
             embed.set_thumbnail(url=embeds[i].icon_url)
             converted.append(embed)
