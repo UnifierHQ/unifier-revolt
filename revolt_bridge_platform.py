@@ -275,7 +275,7 @@ class RevoltPlatform(platform_base.PlatformBase):
             except:
                 me = await channel.server.fetch_member(self.bot.user.id)
 
-            if not me.get_permissions().manage_roles:
+            if not me.get_permissions().manage_role:
                 persona.colour = None
         if not special:
             msg = await channel.send(content)
