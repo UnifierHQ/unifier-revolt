@@ -113,7 +113,11 @@ class RevoltPlatform(platform_base.PlatformBase):
         return attachment.content_type
 
     def convert_embeds(self, embeds):
+        converted = []
         for i in range(len(embeds)):
+            if not type(embeds[i])  is nextcord.Embed:
+                continue
+
             embed = revolt.SendableEmbed(
                 title=embeds[i].title,
                 description=embeds[i].description,
@@ -124,10 +128,11 @@ class RevoltPlatform(platform_base.PlatformBase):
                     else None
                 )
             )
-            embeds[i] = embed
-        return embeds
+            converted.append(embed)
+        return converted
 
     def convert_embeds_discord(self, embeds):
+        converted = []
         for i in range(len(embeds)):
             embed = nextcord.Embed(
                 title=embeds[i].title,
@@ -136,8 +141,8 @@ class RevoltPlatform(platform_base.PlatformBase):
                 colour=embeds[i].colour
             )
             embed.set_thumbnail(url=embeds[i].icon_url)
-            embeds[i] = embed
-        return embeds
+            converted.append(embed)
+        return converted
 
     async def fetch_server(self, server_id):
         return await self.bot.fetch_server(server_id)
