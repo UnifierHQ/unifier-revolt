@@ -266,9 +266,9 @@ class RevoltPlatform(platform_base.PlatformBase):
             )
 
             try:
-                me = channel.guild.get_member(self.bot.user.id)
+                me = channel.server.get_member(self.bot.user.id)
             except:
-                me = await channel.guild.fetch_member(self.bot.user.id)
+                me = await channel.server.fetch_member(self.bot.user.id)
 
             if not me.get_permissions().manage_roles:
                 persona.colour = None
