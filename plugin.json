@@ -10,6 +10,7 @@
   ],
   "bridge_platform": "revolt",
   "shutdown": true,
+  "requirements": ["https://github.com/revoltchat/revolt.py/archive/refs/heads/master.zip"],
   "modules": [
     "bridge_revolt.py"
   ],
