@@ -257,7 +257,7 @@ class RevoltPlatform(platform_base.PlatformBase):
                 return None
 
         if 'bridge' in special.keys():
-            name = special['bridge']['name']
+            name = special['bridge']['name'] or 'Empty username'
             if len(name) > 32:
                 name = name[:-(len(name)-32)]
                 if 'emoji' in special['bridge'].keys():
