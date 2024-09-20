@@ -33,7 +33,12 @@ import os
 import emoji as pymoji
 import datetime
 import re
-import ujson as json
+import json
+
+try:
+    import ujson as json
+except:
+    pass
 
 load_dotenv() # Do not check success
 
