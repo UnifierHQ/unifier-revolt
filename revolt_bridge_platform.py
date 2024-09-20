@@ -308,7 +308,7 @@ class RevoltPlatform(platform_base.PlatformBase):
                 content,
                 embeds=special['embeds'] if 'embeds' in special.keys() else None,
                 attachments=special['files'] if 'files' in special.keys() else None,
-                replies=[revolt.MessageReply(reply_id)] if reply_id else [],
+                reply=revolt.MessageReply(reply_id) if reply_id else [],
                 masquerade=persona
             )
         return msg
