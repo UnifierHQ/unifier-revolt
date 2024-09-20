@@ -36,7 +36,7 @@ import re
 import json
 
 try:
-    import ujson as json
+    import ujson as json  # pylint: disable=import-error
 except:
     pass
 
