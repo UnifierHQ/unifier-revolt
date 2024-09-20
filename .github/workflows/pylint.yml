@@ -55,11 +55,6 @@ jobs:
         mkdir utils
         cp -r unifier/utils/* utils
         cp unifier/requirements_stable.txt requirements_unifier.txt
-    - name: Copy Unifier files
-      run: |
-        mkdir utils
-        cp -r unifier/utils/* utils
-        cp unifier/requirements_stable.txt requirements_unifier.txt
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v5
       with:
