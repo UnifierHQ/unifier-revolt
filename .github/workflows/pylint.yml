@@ -45,6 +45,16 @@ jobs:
       with:
         repository: UnifierHQ/unifier
         path: unifier
+    - name: Download dependency reader
+      uses: actions/checkout@v4
+      with:
+        repository: UnifierHQ/plugin-dependency-reader
+        path: reader
+    - name: Copy Unifier files
+      run: |
+        mkdir utils
+        cp -r unifier/utils/* utils
+        cp unifier/requirements_stable.txt requirements_unifier.txt
     - name: Copy Unifier files
       run: |
         mkdir utils
@@ -54,6 +64,9 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Read Plugin requirements
+      run: |
+        python reader/reader.py
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
