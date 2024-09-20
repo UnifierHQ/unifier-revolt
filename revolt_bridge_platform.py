@@ -302,14 +302,24 @@ class RevoltPlatform(platform_base.PlatformBase):
                             # noinspection PyUnresolvedReferences
                             reply_id = reply.external_copies['revolt'][channel.server.id][1]
                     except:
-                        raise
+                        pass
+
+            reply_msg = None
+
+            if reply_id:
+                try:
+                    reply_msg = self.bot.get_message(reply_id)
+                except:
+                    try:
+                        reply_msg = await channel.fetch_message(reply_id)
+                    except:
                         pass
 
             msg = await channel.send(
                 content,
                 embeds=special['embeds'] if 'embeds' in special.keys() else None,
                 attachments=special['files'] if 'files' in special.keys() else None,
-                reply=revolt.MessageReply(reply_id) if reply_id else None,
+                reply=revolt.MessageReply(reply_msg) if reply_id else None,
                 masquerade=persona
             )
         return msg
