@@ -2,8 +2,8 @@
   "id": "revolt",
   "name": "Revolt Support",
   "description": "Unifier Revolt Support extension",
-  "version": "v1.2.7",
-  "release": 21,
+  "version": "v1.2.8",
+  "release": 22,
   "minimum": 58,
   "services": [
     "bridge_platform"
@@ -12,7 +12,7 @@
   "shutdown": true,
   "requirements": [
     "https://github.com/revoltchat/revolt.py/archive/refs/heads/master.zip",
-    "ulid",
+    "ulid-py",
     "typing-extensions",
     "aenum"
   ],
