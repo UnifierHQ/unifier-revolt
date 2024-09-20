@@ -10,7 +10,12 @@
   ],
   "bridge_platform": "revolt",
   "shutdown": true,
-  "requirements": ["https://github.com/revoltchat/revolt.py/archive/refs/heads/master.zip"],
+  "requirements": [
+    "https://github.com/revoltchat/revolt.py/archive/refs/heads/master.zip",
+    "ulid",
+    "typing-extensions",
+    "aenum"
+  ],
   "modules": [
     "bridge_revolt.py"
   ],
