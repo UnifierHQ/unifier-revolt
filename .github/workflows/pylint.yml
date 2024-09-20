@@ -40,7 +40,7 @@ jobs:
         pip install -r requirements_unifier.txt
         pip install -r requirements.txt
         pip install pylint
-    - name: Analysing the code with pylint
+    - name: Pylint analysis
       run: |
         pylint --enable-all-extensions --extension-pkg-allow-list=orjson,ujson --disable=R,C,W $(git ls-files '*.py')
 
@@ -81,7 +81,7 @@ jobs:
         pip install -r requirements_unifier.txt
         pip install -r requirements.txt
         pip install pylint
-    - name: Analysing the code with pylint
+    - name: Pylint analysis
       run: |
         pylint --enable-all-extensions --extension-pkg-allow-list=orjson,ujson --disable=R,C,W $(git ls-files '*.py')
 
@@ -122,7 +122,7 @@ jobs:
         pip install -r requirements_unifier.txt
         pip install -r requirements.txt
         pip install pylint
-    - name: Analysing the code with pylint
+    - name: Pylint analysis
       run: |
         pylint --enable-all-extensions --extension-pkg-allow-list=orjson,ujson --disable=R,C,W $(git ls-files '*.py')
 
@@ -163,6 +163,6 @@ jobs:
         pip install -r requirements_unifier.txt
         pip install -r requirements.txt
         pip install pylint
-    - name: Analysing the code with pylint
+    - name: Pylint analysis
       run: |
         pylint --enable-all-extensions --extension-pkg-allow-list=orjson,ujson --disable=R,C,W $(git ls-files '*.py')
