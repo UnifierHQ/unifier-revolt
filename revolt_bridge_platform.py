@@ -170,12 +170,9 @@ class RevoltPlatform(platform_base.PlatformBase):
         while offset < len(components):
             if len(components) == 1 and offset == 0:
                 break
+            userid = components[offset].split('>', 1)[0]
             try:
-                userid = int(components[offset].split('>', 1)[0])
-            except:
-                userid = components[offset].split('>', 1)[0]
-            try:
-                user = self.bot.revolt_client.get_user(userid)
+                user = self.bot.get_user(userid)
                 display_name = user.display_name
             except:
                 offset += 1
@@ -192,15 +189,12 @@ class RevoltPlatform(platform_base.PlatformBase):
         while offset < len(components):
             if len(components) == 1 and offset == 0:
                 break
-            try:
-                channelid = int(components[offset].split('>', 1)[0])
-            except:
-                channelid = components[offset].split('>', 1)[0]
+            channelid = components[offset].split('>', 1)[0]
             try:
                 try:
-                    channel = self.bot.revolt_client.get_channel(channelid)
+                    channel = self.bot.get_channel(channelid)
                 except:
-                    channel = await self.bot.revolt_client.fetch_channel(channelid)
+                    channel = await self.bot.fetch_channel(channelid)
                 if not channel:
                     raise ValueError()
             except:
