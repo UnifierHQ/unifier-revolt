@@ -1005,7 +1005,10 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             while True:
                 async with aiohttp.ClientSession() as session:
                     self.bot.revolt_session = session
-                    self.bot.revolt_client = self.Client(session, os.environ.get('TOKEN_REVOLT'))
+                    if hasattr(self.bot, 'tokenstore'):
+                        self.bot.revolt_client = self.Client(session, self.bot.tokenstore.retrieve('TOKEN_REVOLT'))
+                    else:
+                        self.bot.revolt_client = self.Client(session, os.environ.get('TOKEN_REVOLT'))
                     self.bot.revolt_client.add_bot(self.bot)
                     self.bot.revolt_client.add_logger(log.buildlogger(self.bot.package, 'revolt.client', self.bot.loglevel))
                     self.logger.info('Booting Revolt client...')
