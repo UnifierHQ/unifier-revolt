@@ -28,7 +28,6 @@ from utils import log
 import hashlib
 import random
 import string
-from dotenv import load_dotenv
 import os
 import emoji as pymoji
 import datetime
@@ -39,11 +38,6 @@ try:
     import ujson as json  # pylint: disable=import-error
 except:
     pass
-
-load_dotenv() # Do not check success
-
-if not "TOKEN_REVOLT" in os.environ:
-    raise RuntimeError('No Revolt token found')
 
 mentions = nextcord.AllowedMentions(everyone=False, roles=False, users=False)
 
