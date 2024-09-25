@@ -289,7 +289,10 @@ class RevoltPlatform(platform_base.PlatformBase):
                     # probably UnifierMessage, if not then ignore
                     try:
                         # noinspection PyUnresolvedReferences
-                        if reply.source == 'revolt':
+                        if reply.channel_id == channel.id:
+                            # noinspection PyUnresolvedReferences
+                            reply_id = reply.id
+                        elif reply.source == 'revolt':
                             # noinspection PyUnresolvedReferences
                             reply_id = reply.copies[channel.server.id][1]
                         else:
