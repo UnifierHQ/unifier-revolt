@@ -23,6 +23,7 @@ from utils import platform_base
 import revolt
 import nextcord
 from io import BytesIO
+from typing import Union
 
 class RevoltPlatform(platform_base.PlatformBase):
     def __init__(self, *args, **kwargs):
@@ -236,8 +237,11 @@ class RevoltPlatform(platform_base.PlatformBase):
         filebytes = await file.read()
         return nextcord.File(fp=BytesIO(filebytes), filename=file.filename, force_close=False)
 
-    async def to_platform_file(self, file):
-        f = await file.to_file(use_cached=True)
+    async def to_platform_file(self, file: Union[nextcord.Attachment, nextcord.File]):
+        if type(file) is nextcord.Attachment:
+            f = await file.to_file(use_cached=True)
+        else:
+            f = file
         return revolt.File(f.fp.read(), filename=f.filename)
 
     async def send(self, channel, content, special: dict = None):
