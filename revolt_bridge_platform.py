@@ -27,7 +27,8 @@ from io import BytesIO
 class RevoltPlatform(platform_base.PlatformBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.enable_tb = False
+        self.enable_tb = True
+        self.files_per_guild = True
 
     def bot_id(self):
         return self.bot.user.id
