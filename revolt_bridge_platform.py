@@ -33,6 +33,16 @@ class RevoltPlatform(platform_base.PlatformBase):
     def bot_id(self):
         return self.bot.user.id
 
+    def error_is_unavoidable(self, error):
+        if type(error) is [revolt.errors.Forbidden, revolt.errors.ServerError]:
+            return True
+        elif type(error) is revolt.errors.HTTPError:
+            # if revolt.py is sane, the above statement should cover all of these errors
+            # but we'll add this in here just in case it doesn't
+            status_code = int(str(error))
+            return status_code >= 500 or status_code == 401 or status_code == 403
+        return False
+
     def get_server(self, server_id):
         return self.bot.get_server(server_id)
 
