@@ -87,7 +87,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
     Developed by Green"""
     def __init__(self,bot):
         self.bot = bot
-        if not 'revolt' in self.bot.config['external']:
+        if not 'revolt' in self.bot.config.get('external', ['revolt']):
             raise RuntimeError('revolt is not listed as an external service in config.json. More info: https://unichat-wiki.pixels.onl/setup-selfhosted/getting-started#installing-revolt-support')
         if not hasattr(self.bot, 'revolt_client'):
             self.bot.revolt_client = None
