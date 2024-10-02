@@ -88,7 +88,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
     def __init__(self,bot):
         self.bot = bot
         if not 'revolt' in self.bot.config.get('external', ['revolt']):
-            raise RuntimeError('revolt is not listed as an external service in config.json. More info: https://unichat-wiki.pixels.onl/setup-selfhosted/getting-started#installing-revolt-support')
+            raise RuntimeError('revolt is not listed as an external service in configuration. More info: https://wiki.unifierhq.org/setup-selfhosted/getting-started/unifier-older-versions#installing-revolt-support')
         if not hasattr(self.bot, 'revolt_client'):
             self.bot.revolt_client = None
             self.bot.revolt_session = None
