@@ -591,7 +591,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             private = False
             roomtype = 'private' if force_private else 'public'
             msg = None
-            if not force_private and not self.compatibility_mode:
+            if not force_private and not self.compatibility_mode and self.bot.config['enable_private_rooms']:
                 msg = await ctx.send(
                     (
                         'Please select the room type.\n\n'+
@@ -614,6 +614,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 if emoji_id == '\U0001F512':
                     private = True
                     roomtype = 'private'
+            elif not self.bot.config['enable_private_rooms']:
+                roomtype = 'public'
 
             if private or force_private:
                 room = None
