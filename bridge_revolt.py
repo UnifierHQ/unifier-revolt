@@ -915,6 +915,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         @rv_commands.command()
         async def invites(self, ctx, room):
+            if self.compatibility_mode:
+                return await ctx.send('You need Unifier v3 to use this command.')
+
             room = room.lower()
             if not room in self.bot.bridge.rooms:
                 return await ctx.send(f'This room does not exist. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
@@ -955,6 +958,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         @rv_commands.command(name='create-invite')
         async def create_invite(self, ctx, room, expiry='7d', max_usage='0'):
+            if self.compatibility_mode:
+                return await ctx.send('You need Unifier v3 to use this command.')
+
             if max_usage == room:
                 # revolt.py is weird
                 max_usage = '0'
@@ -998,6 +1004,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         @rv_commands.command(name='delete-invite')
         async def delete_invite(self, ctx, invite):
+            if self.compatibility_mode:
+                return await ctx.send('You need Unifier v3 to use this command.')
+
             invite = invite.lower()
             try:
                 room = self.bot.bridge.get_invite(invite)['room']
@@ -1016,6 +1025,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
         @rv_commands.command()
         async def disband(self, ctx, room):
+            if self.compatibility_mode:
+                return await ctx.send('You need Unifier v3 to use this command.')
+
             room = room.lower()
             if not room in self.bot.bridge.rooms:
                 return await ctx.send(
