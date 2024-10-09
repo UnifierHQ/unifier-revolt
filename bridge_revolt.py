@@ -881,6 +881,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             if not room in self.bot.bridge.rooms:
                 return await ctx.send(f'This room does not exist. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
 
+            if not self.bot.bridge.can_manage_room(room, ctx.author, platform='revolt'):
+                return await ctx.send('You do not have permissions to manage this room.')
+
             invites = self.bot.db['rooms'][room]['meta']['private_meta']['invites']
 
             embed = Embed(title=f'Invites for {room}')
