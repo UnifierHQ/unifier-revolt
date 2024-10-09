@@ -34,12 +34,15 @@ class Embed(revolt.SendableEmbed):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields = []
-        self.raw_description = str(kwargs.get('description', None))
+        self.raw_description = kwargs.get('description', None)
 
     @property
     def description(self):
         if self.fields:
-            return self.raw_description + '\n\n' + '\n\n'.join([f'**{field.name}**\n{field.value}' for field in self.fields])
+            print(type(self.raw_description))
+            return (
+                (self.raw_description + '\n\n') if self.raw_description else ''
+            )+ '\n\n'.join([f'**{field.name}**\n{field.value}' for field in self.fields])
         else:
             return self.raw_description
 
