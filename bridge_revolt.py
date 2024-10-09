@@ -577,7 +577,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         async def make(self,ctx,*,room=None):
             force_private = False
             if not ctx.author.id in self.bot.admins:
-                if self.compatibility_mode or self.bot.config['enable_private_rooms']:
+                if self.compatibility_mode or not self.bot.config['enable_private_rooms']:
                     return await ctx.send('Only admins can create rooms.')
                 force_private = True
 
