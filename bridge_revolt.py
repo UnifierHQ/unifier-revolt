@@ -41,6 +41,44 @@ except:
 
 mentions = nextcord.AllowedMentions(everyone=False, roles=False, users=False)
 
+class EmbedField:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+class Embed(revolt.SendableEmbed):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields = []
+        self.raw_description = str(kwargs.get('description', None))
+
+    @property
+    def description(self):
+        if self.fields:
+            return self.raw_description + '\n\n' + '\n\n'.join([f'**{field.name}**\n{field.value}' for field in self.fields])
+        else:
+            return self.raw_description
+
+    @description.setter
+    def description(self, value):
+        self.raw_description = value
+
+    def add_field(self, name, value):
+        self.fields.append(EmbedField(name, value))
+
+    def clear_fields(self):
+        self.fields = []
+
+    def insert_field_at(self, index, name, value):
+        self.fields.insert(index, EmbedField(name, value))
+
+    def remove_field(self, index):
+        self.fields.pop(index)
+
+    def set_field_at(self, index, name, value):
+        self.fields[index] = EmbedField(name, value)
+
+
 def encrypt_string(hash_string):
     sha_signature = \
         hashlib.sha256(hash_string.encode()).hexdigest()
@@ -501,22 +539,73 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             await ctx.send(f'**{user.name}#{user.discriminator}** is no longer a moderator!')
 
         @rv_commands.command()
-        async def make(self,ctx,*,room):
+        async def make(self,ctx,*,room=None):
+            force_private = False
             if not ctx.author.id in self.bot.admins:
-                return await ctx.send('You do not have the permissions to run this command.')
-            room = room.lower()
-            if not bool(re.match("^[A-Za-z0-9_-]*$", room)):
-                return await ctx.send(f'Room names may only contain alphabets, numbers, dashes, and underscores.')
-            if room in list(self.bot.db['rooms'].keys()):
-                return await ctx.send(f'This room already exists!')
+                if self.compatibility_mode or self.bot.config['enable_private_rooms']:
+                    return await ctx.send('Only admins can create rooms.')
+                force_private = True
+
+            if room:
+                room = room.lower()
+                if not bool(re.match("^[A-Za-z0-9_-]*$", room)):
+                    return await ctx.send(f'Room names may only contain alphabets, numbers, dashes, and underscores.')
+                if room in list(self.bot.db['rooms'].keys()):
+                    return await ctx.send(f'This room already exists!')
+
+            private = False
+            roomtype = 'private' if force_private else 'public'
+            msg = None
+            if not force_private and not self.compatibility_mode:
+                msg = await ctx.send(
+                    (
+                        'Please select the room type.\n\n'+
+                        ':lock: **Private**: Make a room just for me and my buddies.\n'
+                        ':globe_with_meridians: **Public**: Make a room for everyone to talk in.'
+                    ),
+                    interactions=revolt.MessageInteractions(
+                        reactions=['\U0001F512','\U0001F310'], restrict_reactions=True
+                    )
+                )
+
+                def check(message, user, _emoji_id):
+                    return message.id == msg.id and user.id == ctx.author.id
+
+                try:
+                    _message, _user, emoji_id = await self.wait_for('reaction_add', check=check, timeout=60)
+                except:
+                    return await msg.remove_all_reactions()
+
+                if emoji_id == '\U0001F512':
+                    private = True
+                    roomtype = 'private'
+
+                await msg.remove_all_reactions()
+
+            if private or force_private:
+                room = None
+                for _ in range(10):
+                    room = roomtype + '-' + ''.join(
+                        random.choice(string.ascii_lowercase + string.digits) for _ in range(10))
+                    if not room in self.bot.bridge.rooms:
+                        break
+                if room in self.bot.bridge.rooms:
+                    if msg:
+                        return await msg.edit(content='Could not generate a unique room name in 10 tries.')
+                    else:
+                        return await ctx.send('Could not generate a unique room name in 10 tries.')
+
             if self.compatibility_mode:
                 self.bot.db['rooms'].update({room: {}})
                 self.bot.db['rooms_revolt'].update({room: {}})
                 self.bot.db['rules'].update({room: []})
                 self.bot.db.save_data()
             else:
-                self.bot.bridge.create_room(room, private=False)
-            await ctx.send(f'Created room `{room}`!')
+                self.bot.bridge.create_room(room, private=private or force_private)
+            if msg:
+                await msg.edit(content=f'Created room `{room}`!')
+            else:
+                await ctx.send(f'Created room `{room}`!')
 
         @rv_commands.command()
         async def addrule(self, ctx, room, *, rule):
@@ -648,18 +737,46 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         async def bind(self,ctx,*,room):
             if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
                 return await ctx.send('You don\'t have the necessary permissions.')
-            if is_room_restricted(room, self.bot.db, self.compatibility_mode) and not ctx.author.id in self.bot.admins:
-                return await ctx.send('Only admins can bind channels to restricted rooms.')
-            try:
+
+            if self.compatibility_mode:
                 data = self.bot.db['rooms'][room]
-            except:
-                return await ctx.send(f'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
+            else:
+                data = self.bot.bridge.get_room(room.lower())
+
+            invite = False
+            invite_link = ''
+            if not data:
+                invite = True
+                try:
+                    # private rooms aren't on v2 and older
+                    if self.compatibility_mode:
+                        raise ValueError()
+
+                    data = self.bot.bridge.get_room(
+                        self.bot.bridge.get_invite(room.lower())['room']
+                    )
+                    invite_link = str(room.lower())
+                    if data['meta']['restricted'] and not ctx.author.id in self.bot.admins:
+                        return await ctx.send('Only admins can bind to restricted rooms.')
+                except:
+                    return await ctx.send(f'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
+
+            if not invite:
+                room = room.lower()
+                if not room in self.bot.bridge.rooms:
+                    return await ctx.send(
+                        f'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
+                else:
+                    return await ctx.send('Your server does not have permissions to join this room.')
+            else:
+                room = self.bot.bridge.get_invite(room.lower())['room']
+
             if self.compatibility_mode:
                 if not room in self.bot.db['rooms_revolt'].keys():
-                    return await ctx.send(f'You need to run `{self.bot.command_prefix}restart-revolt` on Discord for this room to be available.')
-            else:
-                if data['meta']['private']:
-                    return await ctx.send('Private Rooms are not supported yet!')
+                    return await ctx.send(
+                        f'You need to run `{self.bot.command_prefix}restart-revolt` on Discord for this room to be'+
+                        ' available.'
+                    )
 
             duplicate = None
             if self.compatibility_mode:
@@ -722,6 +839,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     self.bot.db['rooms_revolt'][room].update({f'{ctx.server.id}': [ctx.channel.id]})
                     self.bot.db.save_data()
                 else:
+                    if invite:
+                        await self.bot.bridge.accept_invite(ctx.author, invite_link, platform='revolt')
+
                     await self.bot.bridge.join_room(ctx.author, room, ctx.channel, platform='revolt')
                 await ctx.send('Linked channel with network!')
                 try:
@@ -754,6 +874,39 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             except:
                 await ctx.send('Something went wrong - check my permissions.')
                 raise
+
+        @rv_commands.command()
+        async def invites(self, ctx, room):
+            room = room.lower()
+            if not room in self.bot.bridge.rooms:
+                return await ctx.send(f'This room does not exist. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
+
+            invites = self.bot.db['rooms'][room]['meta']['private_meta']['invites']
+
+            embed = Embed(title=f'Invites for {room}')
+
+            success = 0
+            for invite in invites:
+                invite_data = self.bot.bridge.get_invite(invite)
+                if not invite_data:
+                    continue
+                embed.add_field(
+                    name=f'`{invite}`',
+                    value=(
+                              'Unlimited usage' if invite_data['remaining'] == 0 else
+                              f'Remaining uses: {invite_data["remaining"]}'
+                          ) + '\nExpiry: ' + (
+                              "never" if invite_data["expire"] == 0 else f'<t:{round(invite_data["expire"])}:R>'
+                          )
+                )
+                success += 1
+
+            embed.description = f'{success}/20 invites created'
+            try:
+                await ctx.author.send(embed=embed)
+            except:
+                await ctx.send('Could not DM invites. Please turn your DMs on.')
+            await ctx.send('Invites have been DMed.')
 
         @rv_commands.command()
         async def delete(self, ctx, *, msg_id=None):
@@ -1027,8 +1180,10 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             return
         try:
             await self.bot.revolt_session.close()
+            self.bot.revolt_client_task.cancel()
             del self.bot.revolt_client
             del self.bot.revolt_session
+            del self.bot.revolt_client_task
             self.bot.unload_extension('cogs.bridge_revolt')
             await ctx.send(f'Revolt client stopped.\nTo restart, run `{self.bot.command_prefix}load revolt`')
         except:
@@ -1042,8 +1197,10 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             return
         try:
             await self.bot.revolt_session.close()
+            self.bot.revolt_client_task.cancel()
             del self.bot.revolt_client
             del self.bot.revolt_session
+            del self.bot.revolt_client_task
             self.bot.reload_extension('cogs.bridge_revolt')
             await ctx.send('Revolt client restarted.')
         except:

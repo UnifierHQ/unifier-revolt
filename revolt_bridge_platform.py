@@ -25,6 +25,43 @@ import nextcord
 from io import BytesIO
 from typing import Union
 
+class EmbedField:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+class Embed(revolt.SendableEmbed):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields = []
+        self.raw_description = str(kwargs.get('description', None))
+
+    @property
+    def description(self):
+        if self.fields:
+            return self.raw_description + '\n\n' + '\n\n'.join([f'**{field.name}**\n{field.value}' for field in self.fields])
+        else:
+            return self.raw_description
+
+    @description.setter
+    def description(self, value):
+        self.raw_description = value
+
+    def add_field(self, name, value):
+        self.fields.append(EmbedField(name, value))
+
+    def clear_fields(self):
+        self.fields = []
+
+    def insert_field_at(self, index, name, value):
+        self.fields.insert(index, EmbedField(name, value))
+
+    def remove_field(self, index):
+        self.fields.pop(index)
+
+    def set_field_at(self, index, name, value):
+        self.fields[index] = EmbedField(name, value)
+
 class RevoltPlatform(platform_base.PlatformBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -126,19 +163,22 @@ class RevoltPlatform(platform_base.PlatformBase):
     def convert_embeds(self, embeds):
         converted = []
         for i in range(len(embeds)):
-            if not type(embeds[i])  is nextcord.Embed:
+            if not type(embeds[i]) is nextcord.Embed:
                 continue
 
-            embed = revolt.SendableEmbed(
+            embed = Embed(
                 title=embeds[i].title,
                 description=embeds[i].description,
                 url=embeds[i].url,
-                colour=embeds[i].colour.value if embeds[i].colour else None,
+                # colour=embeds[i].colour.value if embeds[i].colour else None,
                 icon_url=(
                     embeds[i].author.icon_url if embeds[i].author else embeds[i].thumbnail.url if embeds[i].thumbnail
                     else None
                 )
             )
+
+            for field in embeds[i].fields:
+                embed.add_field(field.name, field.value)
             converted.append(embed)
         return converted
 
