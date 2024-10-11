@@ -83,11 +83,11 @@ class Embed(revolt.SendableEmbed):
         super().__init__(*args, **kwargs)
         self.fields = []
         self.raw_description = kwargs.get('description', None)
+        self.raw_colour = kwargs.get('color', None) or kwargs.get('colour', None)
 
     @property
     def description(self):
         if self.fields:
-            print(type(self.raw_description))
             return (
                 (self.raw_description + '\n\n') if self.raw_description else ''
             )+ '\n\n'.join([f'**{field.name}**\n{field.value}' for field in self.fields])
@@ -97,6 +97,17 @@ class Embed(revolt.SendableEmbed):
     @description.setter
     def description(self, value):
         self.raw_description = value
+
+    @property
+    def colour(self):
+        if type(self.raw_colour) is int:
+            return '#' + hex(self.raw_colour)[2:].zfill(6)
+
+        return self.raw_colour()
+
+    @colour.setter
+    def colour(self, value):
+        self.raw_colour = value
 
     def add_field(self, name, value):
         self.fields.append(EmbedField(name, value))
