@@ -428,8 +428,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                         extbridge=False
                     )))
 
-            for platform in self.bot.config['external']:
-                if platform == 'revolt':
+            for platform in self.bot.platforms.keys():
+                if platform == 'revolt' or platform == 'discord':
                     continue
                 if should_resend and parent_id == message.id:
                     if self.compatibility_mode:
