@@ -80,6 +80,7 @@ class RevoltPlatform(platform_base.PlatformBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.files_per_guild = True
+        self.filesize_limit = 20000000
 
     def bot_id(self):
         return self.bot.user.id
