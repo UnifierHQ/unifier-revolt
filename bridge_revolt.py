@@ -103,7 +103,7 @@ class Embed(revolt.SendableEmbed):
         if type(self.raw_colour) is int:
             return '#' + hex(self.raw_colour)[2:].zfill(6)
 
-        return self.raw_colour()
+        return self.raw_colour
 
     @colour.setter
     def colour(self, value):
