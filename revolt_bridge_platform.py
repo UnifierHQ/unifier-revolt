@@ -86,7 +86,7 @@ class RevoltPlatform(platform_base.PlatformBase):
         return self.bot.user.id
 
     def error_is_unavoidable(self, error):
-        if type(error) is [revolt.errors.Forbidden, revolt.errors.ServerError]:
+        if type(error) in [revolt.errors.Forbidden, revolt.errors.ServerError]:
             return True
         elif type(error) is revolt.errors.HTTPError:
             # if revolt.py is sane, the above statement should cover all of these errors
