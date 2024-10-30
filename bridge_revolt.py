@@ -584,7 +584,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send(f'**{user.name}#{user.discriminator}** is no longer a moderator!')
 
-        @rv_commands.command()
+        @rv_commands.command(name='create-room', aliases=['make'])
         async def make(self,ctx,*,room=None):
             force_private = False
             if not ctx.author.id in self.bot.admins:
