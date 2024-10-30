@@ -891,7 +891,10 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     if invite:
                         await self.bot.bridge.accept_invite(ctx.author, invite_link, platform='revolt')
 
-                    await self.bot.bridge.join_room(ctx.author, room, ctx.channel, platform='revolt')
+                    try:
+                        await self.bot.bridge.join_room(ctx.author, room, ctx.channel, platform='revolt')
+                    except self.bot.bridge.TooManyConnections:
+                        return await ctx.send('Your server has reached the maximum number of allocated connections.')
                 await ctx.send('Linked channel with network!')
                 try:
                     await msg.pin()
