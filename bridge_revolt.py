@@ -1011,7 +1011,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
             invite = self.bot.bridge.create_invite(room, int(max_usage), expiry)
             try:
-                await ctx.author.send(f'Invite code: `{invite}`\nServers can use `{self.bot.command_prefix}join {invite}` to join your room.')
+                await ctx.author.send(f'Invite code: `{invite}`\nServers can use `{self.bot.command_prefix}bind {invite}` to join your room.')
             except:
                 return await ctx.send(f'Invite was created, but it could not be DMed. Turn your DMs on, then run `{self.bot.command_prefix}invites` to view your invite.')
             await ctx.send('Invite was created, check your DMs!')
