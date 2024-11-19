@@ -25,10 +25,9 @@ Unifier v1.2.x is required.
 To install Unifier Revolt Support, you can run `u!install https://github.com/UnifierHQ/unifier-revolt` on the bot.
 This will install the plugin through System Manager.
 
-> [!INFO]
-> You may see an unknown service error if you use Unifier versions between v2.0.5 and v2.0.6-patch4. This is because
-> these versions do not support services providing Native Universal Platform Support (NUPS). Revolt Support should
-> still work without NUPS on these versions. 
+> [!NOTE]
+> You may see an unknown service error if you use Unifier v2. This is because these versions do not support services
+> providing Native Universal Platform Support (NUPS). Revolt Support should still work without NUPS on these versions. 
 
 ### Unifier v2.0.4-patch2 or older
 To install Unifier Revolt Support, you will need to manually install the extension. Download v1.1.0 then copy

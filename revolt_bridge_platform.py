@@ -23,11 +23,77 @@ from utils import platform_base
 import revolt
 import nextcord
 from io import BytesIO
+from typing import Union
+
+class EmbedField:
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+class Embed(revolt.SendableEmbed):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields = []
+        self.raw_description = kwargs.get('description', None)
+        self.raw_colour = kwargs.get('color', None) or kwargs.get('colour', None)
+
+    @property
+    def description(self):
+        if self.fields:
+            return (
+                (self.raw_description + '\n\n') if self.raw_description else ''
+            )+ '\n\n'.join([f'**{field.name}**\n{field.value}' for field in self.fields])
+        else:
+            return self.raw_description
+
+    @description.setter
+    def description(self, value):
+        self.raw_description = value
+
+    @property
+    def colour(self):
+        if type(self.raw_colour) is int:
+            return '#' + hex(self.raw_colour)[2:].zfill(6)
+
+        return self.raw_colour
+
+    @colour.setter
+    def colour(self, value):
+        self.raw_colour = value
+
+    def add_field(self, name, value):
+        self.fields.append(EmbedField(name, value))
+
+    def clear_fields(self):
+        self.fields = []
+
+    def insert_field_at(self, index, name, value):
+        self.fields.insert(index, EmbedField(name, value))
+
+    def remove_field(self, index):
+        self.fields.pop(index)
+
+    def set_field_at(self, index, name, value):
+        self.fields[index] = EmbedField(name, value)
 
 class RevoltPlatform(platform_base.PlatformBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.enable_tb = False
+        self.files_per_guild = True
+        self.filesize_limit = 20000000
+
+    def bot_id(self):
+        return self.bot.user.id
+
+    def error_is_unavoidable(self, error):
+        if type(error) in [revolt.errors.Forbidden, revolt.errors.ServerError]:
+            return True
+        elif type(error) is revolt.errors.HTTPError:
+            # if revolt.py is sane, the above statement should cover all of these errors
+            # but we'll add this in here just in case it doesn't
+            status_code = int(str(error))
+            return status_code >= 500 or status_code == 401 or status_code == 403
+        return False
 
     def get_server(self, server_id):
         return self.bot.get_server(server_id)
@@ -35,20 +101,44 @@ class RevoltPlatform(platform_base.PlatformBase):
     def get_channel(self, channel_id):
         return self.bot.get_channel(channel_id)
 
+    def get_user(self, user_id):
+        return self.bot.get_user(user_id)
+
+    def get_member(self, server, user_id):
+        return server.get_member(user_id)
+
     def channel(self, message: revolt.Message):
         return message.channel
 
-    def server(self, message: revolt.Message):
-        return message.server
+    def server(self, obj):
+        return obj.server
 
     def content(self, message: revolt.Message):
         return message.content
 
-    def member(self, message: revolt.Message):
+    def reply(self, message: revolt.Message):
+        try:
+            return message.replies[0]
+        except:
+            return message.reply_ids[0]
+
+    def roles(self, member):
+        return member.roles
+
+    def get_hex(self, role):
+        return role.colour.lower().replace('#','',1)
+
+    def author(self, message: revolt.Message):
         return message.author
+
+    def embeds(self, message):
+        return message.embeds
 
     def attachments(self, message):
         return message.attachments
+
+    def url(self, message):
+        return f'https://app.revolt.chat/server/{message.server.id}/channel/{message.channel.id}/{message.id}'
 
     def get_id(self, obj):
         return obj.id
@@ -59,8 +149,22 @@ class RevoltPlatform(platform_base.PlatformBase):
     def user_name(self, user):
         return user.name
 
+    def name(self, obj):
+        return obj.name
+
     def avatar(self, user):
         return user.avatar.url if user.avatar else None
+
+    def permissions(self, user, channel=None):
+        if channel:
+            user_perms = user.get_channel_permissions(channel)
+        else:
+            user_perms = user.get_permissions()
+
+        permissions = platform_base.Permissions()
+        permissions.ban_members = user_perms.ban_members
+        permissions.manage_channels = user_perms.manage_channel
+        return permissions
 
     def is_bot(self, user):
         return user.bot
@@ -72,16 +176,39 @@ class RevoltPlatform(platform_base.PlatformBase):
         return attachment.content_type
 
     def convert_embeds(self, embeds):
+        converted = []
         for i in range(len(embeds)):
-            embed = revolt.SendableEmbed(
+            if not type(embeds[i]) is nextcord.Embed:
+                continue
+
+            embed = Embed(
                 title=embeds[i].title,
                 description=embeds[i].description,
                 url=embeds[i].url,
-                colour=embeds[i].colour,
-                icon_url=embeds[i].thumbnail.url
+                colour=embeds[i].colour.value if embeds[i].colour else None,
+                icon_url=(
+                    embeds[i].author.icon_url if embeds[i].author else embeds[i].thumbnail.url if embeds[i].thumbnail
+                    else None
+                )
             )
-            embeds[i] = embed
-        return embeds
+
+            for field in embeds[i].fields:
+                embed.add_field(field.name, field.value)
+            converted.append(embed)
+        return converted
+
+    def convert_embeds_discord(self, embeds):
+        converted = []
+        for i in range(len(embeds)):
+            embed = nextcord.Embed(
+                title=embeds[i].title,
+                description=embeds[i].description,
+                url=embeds[i].url,
+                # colour=embeds[i].colour.value (do this later)
+            )
+            embed.set_thumbnail(url=embeds[i].icon_url)
+            converted.append(embed)
+        return converted
 
     async def fetch_server(self, server_id):
         return await self.bot.fetch_server(server_id)
@@ -109,12 +236,9 @@ class RevoltPlatform(platform_base.PlatformBase):
         while offset < len(components):
             if len(components) == 1 and offset == 0:
                 break
+            userid = components[offset].split('>', 1)[0]
             try:
-                userid = int(components[offset].split('>', 1)[0])
-            except:
-                userid = components[offset].split('>', 1)[0]
-            try:
-                user = self.bot.revolt_client.get_user(userid)
+                user = self.bot.get_user(userid)
                 display_name = user.display_name
             except:
                 offset += 1
@@ -131,15 +255,12 @@ class RevoltPlatform(platform_base.PlatformBase):
         while offset < len(components):
             if len(components) == 1 and offset == 0:
                 break
-            try:
-                channelid = int(components[offset].split('>', 1)[0])
-            except:
-                channelid = components[offset].split('>', 1)[0]
+            channelid = components[offset].split('>', 1)[0]
             try:
                 try:
-                    channel = self.bot.revolt_client.get_channel(channelid)
+                    channel = self.bot.get_channel(channelid)
                 except:
-                    channel = await self.bot.revolt_client.fetch_channel(channelid)
+                    channel = await self.bot.fetch_channel(channelid)
                 if not channel:
                     raise ValueError()
             except:
@@ -179,10 +300,13 @@ class RevoltPlatform(platform_base.PlatformBase):
 
     async def to_discord_file(self, file):
         filebytes = await file.read()
-        return nextcord.File(fp=BytesIO(filebytes), filename=file.filename)
+        return nextcord.File(fp=BytesIO(filebytes), filename=file.filename, force_close=False)
 
-    async def to_platform_file(self, file):
-        f = await file.to_file(use_cached=True)
+    async def to_platform_file(self, file: Union[nextcord.Attachment, nextcord.File]):
+        if type(file) is nextcord.Attachment:
+            f = await file.to_file(use_cached=True)
+        else:
+            f = file
         return revolt.File(f.fp.read(), filename=f.filename)
 
     async def send(self, channel, content, special: dict = None):
@@ -196,24 +320,72 @@ class RevoltPlatform(platform_base.PlatformBase):
                 return None
 
         if 'bridge' in special.keys():
-            name = special['bridge']['name']
+            name = special['bridge']['name'] or 'Empty username'
             if len(name) > 32:
                 name = name[:-(len(name)-32)]
-            if 'emoji' in special['bridge'].keys():
-                name = name[:-2] + ' ' + special['bridge']['emoji']
+                if 'emoji' in special['bridge'].keys():
+                    if type(special['bridge']['emoji']) is str:
+                        name = name[:-2] + ' ' + special['bridge']['emoji']
+            elif 'emoji' in special['bridge'].keys():
+                if type(special['bridge']['emoji']) is str:
+                    name = name + ' ' + special['bridge']['emoji']
             persona = revolt.Masquerade(
                 name=name,
                 avatar=special['bridge']['avatar'] if 'avatar' in special['bridge'].keys() else None,
                 colour=to_color(special['bridge']['color']) if 'color' in special['bridge'].keys() else None
             )
+
+            try:
+                me = channel.server.get_member(self.bot.user.id)
+            except:
+                me = await channel.server.fetch_member(self.bot.user.id)
+
+            if not me.get_permissions().manage_role:
+                persona.colour = None
         if not special:
             msg = await channel.send(content)
         else:
+            reply_id = None
+            reply = special.get('reply', None)
+
+            if reply:
+                if type(reply) is revolt.Message:
+                    # noinspection PyUnresolvedReferences
+                    reply_id = reply.id
+                elif type(reply) is str:
+                    reply_id = reply
+                else:
+                    # probably UnifierMessage, if not then ignore
+                    try:
+                        # noinspection PyUnresolvedReferences
+                        if reply.channel_id == channel.id:
+                            # noinspection PyUnresolvedReferences
+                            reply_id = reply.id
+                        elif reply.source == 'revolt':
+                            # noinspection PyUnresolvedReferences
+                            reply_id = reply.copies[channel.server.id][1]
+                        else:
+                            # noinspection PyUnresolvedReferences
+                            reply_id = reply.external_copies['revolt'][channel.server.id][1]
+                    except:
+                        pass
+
+            reply_msg = None
+
+            if reply_id:
+                try:
+                    reply_msg = self.bot.get_message(reply_id)
+                except:
+                    try:
+                        reply_msg = await channel.fetch_message(reply_id)
+                    except:
+                        pass
+
             msg = await channel.send(
                 content,
                 embeds=special['embeds'] if 'embeds' in special.keys() else None,
                 attachments=special['files'] if 'files' in special.keys() else None,
-                replies=[revolt.MessageReply(special['reply'])] if special['reply'] else [],
+                reply=revolt.MessageReply(reply_msg) if reply_id else None,
                 masquerade=persona
             )
         return msg
