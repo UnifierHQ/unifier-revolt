@@ -166,14 +166,14 @@ def genid():
         value = '{0}{1}'.format(value, letter)
     return value
 
-class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Support'):
-    """An extension that enables Unifier to run on Revolt. Manages Revolt instance, as well as Revolt-to-Revolt and Revolt-to-external bridging.
+class Revolt(commands.Cog,name='Revolt Support'):
+    """An extension that enables Unifier to run on Revolt. Manages the Revolt instance, as well as Revolt-to-Revolt and Revolt-to-external bridging.
 
     Developed by Green"""
     def __init__(self,bot):
         self.bot = bot
         if not 'revolt' in self.bot.config.get('external', ['revolt']):
-            raise RuntimeError('revolt is not listed as an external service in configuration. More info: https://wiki.unifierhq.org/setup-selfhosted/getting-started/unifier-older-versions#installing-revolt-support')
+            raise RuntimeError('Revolt is not listed as an external service in configuration. More info: https://wiki.unifierhq.org/setup-selfhosted/getting-started/unifier-older-versions#installing-revolt-support')
         if not hasattr(self.bot, 'revolt_client'):
             self.bot.revolt_client = None
             self.bot.revolt_session = None
@@ -330,7 +330,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
             if (message.content.lower().startswith('is unifier down') or
                     message.content.lower().startswith('unifier not working')):
-                await message.channel.send('no', replies=[revolt.MessageReply(message)])
+                await message.channel.send('unifier is not down', replies=[revolt.MessageReply(message)])
 
             tasks = []
             parent_id = None
@@ -556,15 +556,15 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         @rv_commands.command()
         async def addmod(self, ctx, *, userid):
             if not ctx.author.id in self.bot.admins:
-                return await ctx.send('You do not have the permissions to run this command.')
+                return await ctx.send('You are not a bot administrator.')
             userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
             user = self.get_user(userid)
             if not user:
-                return await ctx.send('Not a valid user!')
+                return await ctx.send('This is not a valid user. You can either @ping to select a user **or** use their user ID.')
             if userid in self.bot.db['moderators']:
-                return await ctx.send('This user is already a moderator!')
+                return await ctx.send('This user is already a moderator.')
             if userid in self.bot.admins or user.bot:
-                return await ctx.send('are you fr')
+                return await ctx.send('are you fr? you\'re a moderator.')
             self.bot.db['moderators'].append(userid)
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send(f'**{user.name}#{user.discriminator}** is now a moderator!')
@@ -572,15 +572,15 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         @rv_commands.command(aliases=['remmod', 'delmod'])
         async def delmod(self, ctx, *, userid):
             if not ctx.author.id in self.bot.admins:
-                return await ctx.send('You do not have the permissions to run this command.')
+                return await ctx.send('You are not a bot administrator.')
             userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
             user = self.get_user(userid)
             if not user:
-                return await ctx.send('Not a valid user!')
+                return await ctx.send('This is not a valid user. You can either @ping to select a user **or** use their user ID.')
             if not userid in self.bot.db['moderators']:
-                return await ctx.send('This user is not a moderator!')
+                return await ctx.send('This user is not a moderator.')
             if userid in self.bot.admins or user.bot:
-                return await ctx.send('are you fr')
+                return await ctx.send('are you fr? you\'re already a admin')
             self.bot.db['moderators'].remove(userid)
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send(f'**{user.name}#{user.discriminator}** is no longer a moderator!')
@@ -590,7 +590,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             force_private = False
             if not ctx.author.id in self.bot.admins:
                 if self.compatibility_mode or not self.bot.config['enable_private_rooms']:
-                    return await ctx.send('Only admins can create rooms.')
+                    return await ctx.send('Only administrators can create rooms.')
                 force_private = True
 
             if room:
