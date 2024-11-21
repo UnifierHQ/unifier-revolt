@@ -1166,7 +1166,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             self.bot.db.save_data()
             await ctx.send('User/server can now forward messages to this channel!')
 
-                async def roomlist(self, ctx, index, private=False):
+        async def roomlist(self, ctx, index, private=False):
             try:
                 index = int(index) - 1
             except:
