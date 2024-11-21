@@ -1398,7 +1398,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 vinfo = {}
 
             try:
-                with open('plugins/revolt.json') as file:
+                with open('boot/internal.json') as file:
                     pinfo = json.load(file)
             except:
                 pinfo = {}
@@ -1436,7 +1436,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 name='Version info',
                 value=(
                     f'Unifier version {vinfo.get("version","unknown")}'+
-                    f'- Revolt Support version {pinfo.get("version","unknown")}\n'+
+                    f'- Revolt Support version {pluginfo.get("version","unknown")}\n'+
                     f'\nUsing Nextcord {nextcord.__version__} and revolt.py {revolt.__version__} on Python '+
                     f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
                 )
