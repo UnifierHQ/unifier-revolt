@@ -1166,14 +1166,14 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             self.bot.db.save_data()
             await ctx.send('User/server can now forward messages to this channel!')
 
-        async def roomlist(self, ctx, index, private=False):
+                async def roomlist(self, ctx, index, private=False):
             try:
                 index = int(index) - 1
             except:
                 index = 0
             if index < 1:
                 index = 0
-            embed = Embed(title=f'{self.user.display_name or self.user.name} Rooms')
+            embed = Embed(title=f'{self.user.display_name or self.user.name} Rooms', color=self.bot.colors.unifier)
 
             for i in range(20*index,20*(index+1)):
                 if i >= len(self.bot.bridge.rooms):
@@ -1181,7 +1181,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
                 room = self.bot.bridge.rooms[i]
                 roominfo = self.bot.bridge.get_room(room)
-                if private and not roominfo['meta']['private']:
+                if (private and not roominfo['meta']['private']) or (not private and roominfo['meta']['private']):
                     continue
 
                 if private:
