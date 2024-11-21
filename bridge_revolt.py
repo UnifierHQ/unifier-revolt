@@ -968,7 +968,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             embed.add_field(
                 name='Note',
                 value=(
-                    'You can always disband or disconnect from Private Rooms to free up allocations.\n+
+                    'You can always disband or disconnect from Private Rooms to free up allocations.\n'+
                     'Public Rooms connections don\'t count towards your Private Rooms connections usage.'
                 )
             )
