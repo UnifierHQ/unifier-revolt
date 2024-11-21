@@ -1526,6 +1526,16 @@ class Revolt(commands.Cog,name='Revolt Support'):
                         any(search_query.lower() in alias.lower() for alias in command.aliases)
                     )
                 ]
+
+                for command in commands:
+                    try:
+                        canrun = await ctx.can_run(command=command)
+                    except:
+                        canrun = False
+
+                    if not canrun:
+                        commands.remove(command)
+
                 embed.title += ' / search'
                 embed.description = (
                     f'Searching: {search_query} (**{len(commands)}** results)\n{embed.description}\n'+
@@ -1537,7 +1547,18 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     f'Use `{self.bot.command_prefix}help page:<number>` to navigate through pages.'
                 )
                 commands = self.get_all_commands()
+
+                for command in commands:
+                    try:
+                        canrun = await ctx.can_run(command=command)
+                    except:
+                        canrun = False
+
+                    if not canrun:
+                        commands.remove(command)
+
                 if query and not page:
+                    found = False
                     try:
                         try:
                             command_focus = self.get_command(query)
@@ -1545,6 +1566,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                             command_focus = self.get_command(query.lower())
                         if type(command_focus) is rv_commands.Group:
                             raise KeyError()
+                        found = True
                     except KeyError:
                         try:
                             if type(command_focus) is rv_commands.Group:
@@ -1557,10 +1579,19 @@ class Revolt(commands.Cog,name='Revolt Support'):
                                 if not type(group) is rv_commands.Group:
                                     raise KeyError()
                                 command_focus = group.get_command(query.split(' ')[1])
+                                found = True
                             else:
                                 raise KeyError()
                         except KeyError:
-                            return await ctx.send('Invalid command. Use `search:command` to look up commands.')
+                            pass
+
+                    try:
+                        canrun = await ctx.can_run(command=command_focus)
+                    except:
+                        canrun = False
+
+                    if not canrun or not found:
+                        await ctx.send('Invalid command. Use `search:command` to look up commands.')
 
             if command_focus:
                 cmdname = (
