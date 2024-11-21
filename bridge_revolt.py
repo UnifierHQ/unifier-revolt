@@ -33,6 +33,7 @@ import emoji as pymoji
 import datetime
 import re
 import json
+import sys
 
 try:
     import ujson as json  # pylint: disable=import-error
@@ -1389,7 +1390,57 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         async def about(self,ctx):
             with open('plugins/revolt.json') as file:
                 pluginfo = json.load(file)
-            await ctx.send(f'**Unifier for Revolt**\nVersion {pluginfo["version"]}, made by Green')
+
+            try:
+                with open('plugins/system.json') as file:
+                    vinfo = json.load(file)
+            except:
+                vinfo = {}
+
+            try:
+                with open('boot/internal.json') as file:
+                    pinfo = json.load(file)
+            except:
+                pinfo = {}
+
+            terms_hyperlink = f'[Terms of Service]({self.bot.config["terms_url"]})'
+            if not self.bot.config["terms_url"]:
+                terms_hyperlink = 'Terms of Service (missing)'
+
+            privacy_hyperlink = f'[Privacy Policy]({self.bot.config["privacy_url"]})'
+            if not self.bot.config["privacy_url"]:
+                privacy_hyperlink = 'Privacy Policy (missing)'
+
+            embed = Embed(
+                title=self.user.display_name or self.user.name,
+                description=(
+                    self.bot.config["custom_slogan"] or 'Powered by Unifier and Unifier Revolt Support' + '\n\n' +
+                    f'{pinfo.get("product_name","unknown")} is made by '+
+                    f'[{pinfo.get("maintainer","unknown")}]({pinfo.get("maintainer_profile","unknown")}), a team '+
+                    'dedicated to making cross-platform communication better for everyone.'
+                )
+            )
+
+            embed.add_field(
+                name='View source code',
+                value=f'{self.bot.config["repo"]}\n{pinfo["repository"]}'
+            )
+
+            embed.add_field(
+                name='Legal stuff',
+                value=f'{terms_hyperlink}\n{privacy_hyperlink}'
+            )
+
+            embed.add_field(
+                name='Version info',
+                value=(
+                    f'Unifier version {vinfo.get("version","unknown")}'+
+                    f'- Revolt Support version {pinfo.get("version","unknown")}\n'+
+                    f'\nUsing Nextcord {nextcord.__version__} and revolt.py {revolt.__version__} on Python '+
+                    f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
+                )
+            )
+            await ctx.send(embed=embed)
 
     async def revolt_boot(self):
         if self.bot.revolt_client is None:
