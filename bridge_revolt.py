@@ -1398,7 +1398,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 vinfo = {}
 
             try:
-                with open('boot/internal.json') as file:
+                with open('plugins/revolt.json') as file:
                     pinfo = json.load(file)
             except:
                 pinfo = {}
