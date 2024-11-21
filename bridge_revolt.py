@@ -182,7 +182,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
     def __init__(self,bot):
         self.bot = bot
         if not 'revolt' in self.bot.config.get('external', ['revolt']):
-            raise RuntimeError('Revolt is not listed as an external service in configuration. More info: https://wiki.unifierhq.org/setup-selfhosted/getting-started/unifier-older-versions#installing-revolt-support')
+            # revolt is intentionally lowercase
+            raise RuntimeError('revolt is not listed as an external service in configuration. More info: https://wiki.unifierhq.org/setup-selfhosted/getting-started/unifier-older-versions#installing-revolt-support')
         if not hasattr(self.bot, 'revolt_client'):
             self.bot.revolt_client = None
             self.bot.revolt_session = None
