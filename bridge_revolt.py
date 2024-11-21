@@ -928,6 +928,53 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 raise
 
         @rv_commands.command()
+        async def allocations(self, ctx):
+            if not self.bot.config['enable_private_rooms']:
+                return await ctx.send('Private rooms are disabled.')
+
+            create_used = self.bot.bridge.get_rooms_count(ctx.server.id)
+            conn_used = self.bot.bridge.get_connections_count(ctx.server.id)
+            create_limit = self.bot.bridge.get_rooms_limit(ctx.server.id)
+            conn_limit = self.bot.bridge.get_connections_limit(ctx.server.id)
+
+            if create_limit > 0:
+                create_warning = ':warning: ' if (create_used / create_limit) > 0.8 else ''
+            else:
+                create_warning = ''
+
+            if conn_limit > 0:
+                conn_warning = ':warning ' if (conn_used / conn_limit) > 0.8 else ''
+            else:
+                conn_warning = ''
+
+            embed = Embed(
+                title='Your Private Rooms allocations',
+                color=self.bot.colors.unifier
+            )
+            embed.add_field(
+                name='Private Rooms creations',
+                value=create_warning + (
+                    "You have **unlimited** Private Rooms creations." if create_limit == 0 else
+                    f"You've used **{create_used}** out of **{create_limit}** allocated Private Rooms creations."
+                )
+            )
+            embed.add_field(
+                name='Private Rooms connections',
+                value=conn_warning + (
+                    "You have **unlimited** Private Rooms connections." if conn_limit == 0 else
+                    f"You've used **{conn_used}** out of **{conn_limit}** allocated Private Rooms connections."
+                ),
+            )
+            embed.add_field(
+                name='Note',
+                value=(
+                    'You can always disband or disconnect from Private Rooms to free up allocations.\n+
+                    'Public Rooms connections don\'t count towards your Private Rooms connections usage.'
+                )
+            )
+            await ctx.send(embed=embed)
+
+        @rv_commands.command()
         async def invites(self, ctx, room):
             if self.compatibility_mode:
                 return await ctx.send('You need Unifier v3 to use this command.')
