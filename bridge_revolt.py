@@ -1437,7 +1437,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 value=(
                     f'Unifier version {vinfo.get("version","unknown")}'+
                     f'- Revolt Support version {pluginfo.get("version","unknown")}\n'+
-                    f'\nUsing Nextcord {nextcord.__version__} and revolt.py {revolt.__version__} on Python '+
+                    f'Using Nextcord {nextcord.__version__} and revolt.py {revolt.__version__} on Python '+
                     f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
                 )
             )
