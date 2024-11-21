@@ -1424,7 +1424,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
 
             embed.add_field(
                 name='View source code',
-                value=f'{self.bot.config["repo"]}\n{pinfo["repository"]}'
+                value=f'{self.bot.config["repo"]}\n{pluginfo["repository"][:-4] if pluginfo["repository"].endswith(".git") else pluginfo["repository"]}'
             )
 
             embed.add_field(
@@ -1436,7 +1436,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 name='Version info',
                 value=(
                     f'Unifier version {vinfo.get("version","unknown")}'+
-                    f'- Revolt Support version {pluginfo.get("version","unknown")}\n'+
+                    f' - Revolt Support version {pluginfo.get("version","unknown")}\n'+
                     f'Using Nextcord {nextcord.__version__} and revolt.py {revolt.__version__} on Python '+
                     f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
                 )
