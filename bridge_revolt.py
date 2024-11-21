@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 import nextcord
 from nextcord.ext import commands
 from revolt.ext import commands as rv_commands
+from revolt.ext.commands import Command, Group
 import asyncio
 import aiohttp
 import revolt
@@ -34,7 +35,7 @@ import datetime
 import re
 import json
 import sys
-from typing import Optional
+from typing import Optional, Union
 
 try:
     import ujson as json  # pylint: disable=import-error
@@ -565,39 +566,19 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
             await self.bot.bridge.delete_copies(msgdata.id)
 
-        @rv_commands.command()
-        async def addmod(self, ctx, *, userid):
-            if not ctx.author.id in self.bot.admins:
-                return await ctx.send('You do not have the permissions to run this command.')
-            userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
-            user = self.get_user(userid)
-            if not user:
-                return await ctx.send('This is not a valid user. You can either @ping to select a user **or** use their user ID.')
-            if userid in self.bot.db['moderators']:
-                return await ctx.send('This user is already a moderator.')
-            if userid in self.bot.admins or user.bot:
-                return await ctx.send('are you fr')
-            self.bot.db['moderators'].append(userid)
-            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
-            await ctx.send(f'**{user.name}#{user.discriminator}** is now a moderator!')
+        @rv_commands.group()
+        async def bridge(self, ctx):
+            pass
 
-        @rv_commands.command(aliases=['remmod', 'delmod'])
-        async def delmod(self, ctx, *, userid):
-            if not ctx.author.id in self.bot.admins:
-                return await ctx.send('You do not have the permissions to run this command.')
-            userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
-            user = self.get_user(userid)
-            if not user:
-                return await ctx.send('This is not a valid user. You can either @ping to select a user **or** use their user ID.')
-            if not userid in self.bot.db['moderators']:
-                return await ctx.send('This user is not a moderator.')
-            if userid in self.bot.admins or user.bot:
-                return await ctx.send('are you fr')
-            self.bot.db['moderators'].remove(userid)
-            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
-            await ctx.send(f'**{user.name}#{user.discriminator}** is no longer a moderator!')
+        @rv_commands.group()
+        async def config(self, ctx):
+            pass
 
-        @rv_commands.command(name='create-room', aliases=['make'])
+        @rv_commands.group()
+        async def moderation(self, ctx):
+            pass
+
+        @bridge.command(name='create-room', aliases=['make'])
         async def create_room(self,ctx,*,room=None):
             force_private = False
             if not ctx.author.id in self.bot.admins:
@@ -792,7 +773,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send('Room renamed!')
 
-        @rv_commands.command(aliases=['connect','link'])
+        @bridge.command(aliases=['connect','link'])
         async def bind(self,ctx,*,room):
             if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
                 return await ctx.send('You don\'t have the necessary permissions.')
@@ -917,7 +898,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 await ctx.send('Something went wrong - check my permissions.')
                 raise
 
-        @rv_commands.command(aliases=['unlink', 'disconnect'])
+        @bridge.command(aliases=['unlink', 'disconnect'])
         async def unbind(self, ctx, *, room=None):
             if not room:
                 # room autodetect
@@ -940,7 +921,71 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 await ctx.send('Something went wrong - check my permissions.')
                 raise
 
-        @rv_commands.command()
+        @bridge.command()
+        async def disband(self, ctx, room):
+            if self.compatibility_mode:
+                return await ctx.send('You need Unifier v3 to use this command.')
+
+            room = room.lower()
+            if not room in self.bot.bridge.rooms:
+                return await ctx.send(
+                    f'This room does not exist. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
+
+            if not self.bot.bridge.can_manage_room(room, ctx.author, platform='revolt'):
+                return await ctx.send('You do not have permissions to manage this room.')
+
+            embed = Embed(title=f'Disband {room}?', description='Once the room is disbanded, it\'s gone forever!')
+
+            msg = await ctx.send(embed=embed, interactions=revolt.MessageInteractions(
+                reactions=['\U00002705', '\U0000274C'], restrict_reactions=True
+            ))
+
+            def check(message, user, _emoji_id):
+                return message.id == msg.id and user.id == ctx.author.id
+
+            try:
+                _message, _user, emoji_id = await self.wait_for('reaction_add', check=check, timeout=60)
+            except:
+                return await ctx.send('Timed out.')
+
+            if emoji_id == '\U0000274C':
+                return await ctx.send('Aborted.')
+
+            self.bot.bridge.delete_room(room)
+            await ctx.send('Room disbanded.')
+
+        @bridge.command()
+        async def avatar(self, ctx, *, url=''):
+            desc = f'You have no avatar! Run `{self.bot.command_prefix}avatar <url>` or set an avatar in your profile settings.'
+            try:
+                if f'{ctx.author.id}' in list(self.bot.db['avatars'].keys()):
+                    avurl = self.bot.db['avatars'][f'{ctx.author.id}']
+                    desc = f'You have a custom avatar! Run `{self.bot.command_prefix}avatar <url>` to change it, or run `{self.bot.command_prefix}avatar remove` to remove it.'
+                else:
+                    desc = f'You have a default avatar! Run `{self.bot.command_prefix}avatar <url>` to set a custom one for UniChat.'
+                    avurl = ctx.author.avatar.url
+            except:
+                avurl = None
+            if not url == '':
+                avurl = url
+            embed = revolt.SendableEmbed(title='This is your UniChat avatar!', description=desc, icon_url=avurl)
+            if url == 'remove':
+                if not f'{ctx.author.id}' in list(self.bot.db['avatars'].keys()):
+                    return await ctx.send('You don\'t have a custom avatar!')
+                self.bot.db['avatars'].pop(f'{ctx.author.id}')
+                return await ctx.send('Custom avatar removed!')
+            if not url == '':
+                embed.title = 'This is how you\'ll look!'
+                embed.description = 'Your avatar has been saved!'
+                self.bot.db['avatars'].update({f'{ctx.author.id}': url})
+                self.bot.db.save_data()
+            try:
+                await ctx.send(embed=embed)
+            except:
+                if not url == '':
+                    return await ctx.send("Invalid URL!")
+
+        @bridge.command()
         async def allocations(self, ctx):
             if not self.bot.config['enable_private_rooms']:
                 return await ctx.send('Private rooms are disabled.')
@@ -987,7 +1032,64 @@ class Revolt(commands.Cog,name='Revolt Support'):
             )
             await ctx.send(embed=embed)
 
-        @rv_commands.command()
+        @bridge.command()
+        async def rooms(self, ctx, index='1'):
+            await self.roomlist(ctx, index)
+
+        @bridge.command(name='private-rooms')
+        async def private_rooms(self, ctx, index='1'):
+            await self.roomlist(ctx, index, private=True)
+
+        @bridge.command(aliases=['colour'])
+        async def color(self, ctx, *, color=''):
+            if color == '':
+                try:
+                    current_color = self.bot.db['colors'][f'{ctx.author.id}']
+                    if current_color == '':
+                        current_color = 'Default'
+                        embed_color = self.bot.colors.unifier
+                    elif current_color == 'inherit':
+                        current_color = 'Inherit from role'
+                        try:
+                            embed_color = ctx.author.roles[len(ctx.author.roles) - 1].colour.replace('#', '')
+                        except:
+                            embed_color = None
+                    else:
+                        embed_color = current_color
+                except:
+                    current_color = 'Default'
+                    embed_color = self.bot.colors.unifier
+                try:
+                    embed_color = 'rgb' + str(tuple(int(embed_color[i:i + 2], 16) for i in (0, 2, 4)))
+                except:
+                    embed_color = None
+                embed = revolt.SendableEmbed(title='Your Unifier color', description=current_color, colour=embed_color)
+                await ctx.send(embeds=[embed])
+            elif color == 'inherit':
+                self.bot.db['colors'].update({f'{ctx.author.id}': 'inherit'})
+                self.bot.db.save_data()
+                await ctx.send('Supported platforms will now inherit your Revolt role color.')
+            else:
+                try:
+                    tuple(int(color.replace('#', '', 1)[i:i + 2], 16) for i in (0, 2, 4))
+                except:
+                    return await ctx.send('Invalid hex code!')
+                self.bot.db['colors'].update({f'{ctx.author.id}': color})
+                self.bot.db.save_data()
+                await ctx.send('Supported platforms will now inherit the custom color.')
+
+        @bridge.command()
+        async def nickname(self, ctx, *, nickname=''):
+            if len(nickname) > 30:
+                return await ctx.send('Please keep your nickname within 30 characters.')
+            if len(nickname) == 0:
+                self.bot.db['nicknames'].pop(f'{ctx.author.id}', None)
+            else:
+                self.bot.db['nicknames'].update({f'{ctx.author.id}': nickname})
+            self.bot.db.save_data()
+            await ctx.send('Nickname updated.')
+
+        @config.command()
         async def invites(self, ctx, room):
             if self.compatibility_mode:
                 return await ctx.send('You need Unifier v3 to use this command.')
@@ -1030,7 +1132,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 await ctx.send('Could not DM invites. Please turn your DMs on.')
             await ctx.send('Invites have been DMed.')
 
-        @rv_commands.command(name='create-invite')
+        @config.command(name='create-invite')
         async def create_invite(self, ctx, room, expiry='7d', max_usage='0'):
             if self.compatibility_mode:
                 return await ctx.send('You need Unifier v3 to use this command.')
@@ -1076,7 +1178,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 return await ctx.send(f'Invite was created, but it could not be DMed. Turn your DMs on, then run `{self.bot.command_prefix}invites` to view your invite.')
             await ctx.send('Invite was created, check your DMs!')
 
-        @rv_commands.command(name='delete-invite')
+        @config.command(name='delete-invite')
         async def delete_invite(self, ctx, invite):
             if self.compatibility_mode:
                 return await ctx.send('You need Unifier v3 to use this command.')
@@ -1097,40 +1199,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             self.bot.bridge.delete_invite(invite)
             await ctx.send('Invite was deleted.')
 
-        @rv_commands.command()
-        async def disband(self, ctx, room):
-            if self.compatibility_mode:
-                return await ctx.send('You need Unifier v3 to use this command.')
-
-            room = room.lower()
-            if not room in self.bot.bridge.rooms:
-                return await ctx.send(
-                    f'This room does not exist. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
-
-            if not self.bot.bridge.can_manage_room(room, ctx.author, platform='revolt'):
-                return await ctx.send('You do not have permissions to manage this room.')
-
-            embed = Embed(title=f'Disband {room}?', description='Once the room is disbanded, it\'s gone forever!')
-
-            msg = await ctx.send(embed=embed, interactions=revolt.MessageInteractions(
-                reactions=['\U00002705','\U0000274C'], restrict_reactions=True
-            ))
-
-            def check(message, user, _emoji_id):
-                return message.id == msg.id and user.id == ctx.author.id
-
-            try:
-                _message, _user, emoji_id = await self.wait_for('reaction_add', check=check, timeout=60)
-            except:
-                return await ctx.send('Timed out.')
-
-            if emoji_id == '\U0000274C':
-                return await ctx.send('Aborted.')
-
-            self.bot.bridge.delete_room(room)
-            await ctx.send('Room disbanded.')
-
-        @rv_commands.command()
+        @moderation.command()
         async def delete(self, ctx, *, msg_id=None):
             """Deletes all bridged messages. Does not delete the original."""
             gbans = self.bot.db['banned']
@@ -1179,7 +1248,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     traceback.print_exc()
                     await ctx.send('Something went wrong.')
 
-        @rv_commands.command()
+        @moderation.command()
         async def block(self, ctx, *, target):
             if not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members:
                 return await ctx.send('You cannot restrict members/servers.')
@@ -1207,7 +1276,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             self.bot.db.save_data()
             await ctx.send('User/server can no longer forward messages to this channel!')
 
-        @rv_commands.command(aliases=['unban'])
+        @moderation.command(aliases=['unban'])
         async def unblock(self, ctx, *, target):
             if not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members:
                 return await ctx.send('You cannot unrestrict members/servers.')
@@ -1233,7 +1302,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 index = 0
             if index < 1:
                 index = 0
-            embed = Embed(title=f'{self.user.display_name or self.user.name} Rooms')
+            embed = Embed(title=f'{self.user.display_name or self.user.name} Rooms', color=self.bot.colors.unifier)
 
             for i in range(20*index,20*(index+1)):
                 if i >= len(self.bot.bridge.rooms):
@@ -1241,7 +1310,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
                 room = self.bot.bridge.rooms[i]
                 roominfo = self.bot.bridge.get_room(room)
-                if private and not roominfo['meta']['private']:
+                if (private and not roominfo['meta']['private']) or (not private and roominfo['meta']['private']):
                     continue
 
                 if private:
@@ -1261,15 +1330,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
             await ctx.send(embed=embed)
 
-        @rv_commands.command()
-        async def rooms(self, ctx, index='1'):
-            await self.roomlist(ctx, index)
-
-        @rv_commands.command(name='private-rooms')
-        async def private_rooms(self, ctx, index='1'):
-            await self.roomlist(ctx, index, private=True)
-
-        @rv_commands.command(aliases=['find'])
+        @moderation.command(aliases=['find'])
         async def identify(self, ctx):
             if (not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members and
                     not ctx.author.id in self.bot.moderators):
@@ -1318,85 +1379,39 @@ class Revolt(commands.Cog,name='Revolt Support'):
             await ctx.send(
                 f'Sent by @{username} ({msg_obj.author_id}) in {guildname} ({msg_obj.guild_id}, {msg_obj.source})\n\nParent ID: {msg_obj.id}')
 
-        @rv_commands.command(aliases=['colour'])
-        async def color(self, ctx, *, color=''):
-            if color == '':
-                try:
-                    current_color = self.bot.db['colors'][f'{ctx.author.id}']
-                    if current_color == '':
-                        current_color = 'Default'
-                        embed_color = self.bot.colors.unifier
-                    elif current_color == 'inherit':
-                        current_color = 'Inherit from role'
-                        try:
-                            embed_color = ctx.author.roles[len(ctx.author.roles)-1].colour.replace('#','')
-                        except:
-                            embed_color = None
-                    else:
-                        embed_color = current_color
-                except:
-                    current_color = 'Default'
-                    embed_color = self.bot.colors.unifier
-                try:
-                    embed_color = 'rgb'+str(tuple(int(embed_color[i:i + 2], 16) for i in (0, 2, 4)))
-                except:
-                    embed_color = None
-                embed = revolt.SendableEmbed(title='Your Unifier color', description=current_color, colour=embed_color)
-                await ctx.send(embeds=[embed])
-            elif color == 'inherit':
-                self.bot.db['colors'].update({f'{ctx.author.id}': 'inherit'})
-                self.bot.db.save_data()
-                await ctx.send('Supported platforms will now inherit your Revolt role color.')
-            else:
-                try:
-                    tuple(int(color.replace('#', '', 1)[i:i + 2], 16) for i in (0, 2, 4))
-                except:
-                    return await ctx.send('Invalid hex code!')
-                self.bot.db['colors'].update({f'{ctx.author.id}': color})
-                self.bot.db.save_data()
-                await ctx.send('Supported platforms will now inherit the custom color.')
-
         @rv_commands.command()
-        async def nickname(self, ctx, *, nickname=''):
-            if len(nickname) > 30:
-                return await ctx.send('Please keep your nickname within 30 characters.')
-            if len(nickname) == 0:
-                self.bot.db['nicknames'].pop(f'{ctx.author.id}', None)
-            else:
-                self.bot.db['nicknames'].update({f'{ctx.author.id}': nickname})
-            self.bot.db.save_data()
-            await ctx.send('Nickname updated.')
+        async def addmod(self, ctx, *, userid):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
+            user = self.get_user(userid)
+            if not user:
+                return await ctx.send(
+                    'This is not a valid user. You can either @ping to select a user **or** use their user ID.')
+            if userid in self.bot.db['moderators']:
+                return await ctx.send('This user is already a moderator.')
+            if userid in self.bot.admins or user.bot:
+                return await ctx.send('are you fr')
+            self.bot.db['moderators'].append(userid)
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send(f'**{user.name}#{user.discriminator}** is now a moderator!')
 
-        @rv_commands.command()
-        async def avatar(self, ctx, *, url=''):
-            desc = f'You have no avatar! Run `{self.bot.command_prefix}avatar <url>` or set an avatar in your profile settings.'
-            try:
-                if f'{ctx.author.id}' in list(self.bot.db['avatars'].keys()):
-                    avurl = self.bot.db['avatars'][f'{ctx.author.id}']
-                    desc = f'You have a custom avatar! Run `{self.bot.command_prefix}avatar <url>` to change it, or run `{self.bot.command_prefix}avatar remove` to remove it.'
-                else:
-                    desc = f'You have a default avatar! Run `{self.bot.command_prefix}avatar <url>` to set a custom one for UniChat.'
-                    avurl = ctx.author.avatar.url
-            except:
-                avurl = None
-            if not url == '':
-                avurl = url
-            embed = revolt.SendableEmbed(title='This is your UniChat avatar!', description=desc, icon_url=avurl)
-            if url == 'remove':
-                if not f'{ctx.author.id}' in list(self.bot.db['avatars'].keys()):
-                    return await ctx.send('You don\'t have a custom avatar!')
-                self.bot.db['avatars'].pop(f'{ctx.author.id}')
-                return await ctx.send('Custom avatar removed!')
-            if not url == '':
-                embed.title = 'This is how you\'ll look!'
-                embed.description = 'Your avatar has been saved!'
-                self.bot.db['avatars'].update({f'{ctx.author.id}': url})
-                self.bot.db.save_data()
-            try:
-                await ctx.send(embed=embed)
-            except:
-                if not url=='':
-                    return await ctx.send("Invalid URL!")
+        @rv_commands.command(aliases=['remmod', 'delmod'])
+        async def delmod(self, ctx, *, userid):
+            if not ctx.author.id in self.bot.admins:
+                return await ctx.send('You do not have the permissions to run this command.')
+            userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
+            user = self.get_user(userid)
+            if not user:
+                return await ctx.send(
+                    'This is not a valid user. You can either @ping to select a user **or** use their user ID.')
+            if not userid in self.bot.db['moderators']:
+                return await ctx.send('This user is not a moderator.')
+            if userid in self.bot.admins or user.bot:
+                return await ctx.send('are you fr')
+            self.bot.db['moderators'].remove(userid)
+            await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
+            await ctx.send(f'**{user.name}#{user.discriminator}** is no longer a moderator!')
 
         @rv_commands.command()
         async def about(self,ctx):
@@ -1454,6 +1469,25 @@ class Revolt(commands.Cog,name='Revolt Support'):
             )
             await ctx.send(embed=embed)
 
+        def get_all_commands(self):
+            def extract_subcommands(command: Union[Command[revolt.Client], Group[revolt.Client]]):
+                subcommands = []
+                if type(command) is rv_commands.Group:
+                    for child in command.commands:
+                        subcommands += extract_subcommands(child)
+                    return subcommands
+                else:
+                    return [command]
+
+            __commands = list(self.commands)
+
+            application_commands = []
+            __command: Union[Command[revolt.Client], Group[revolt.Client]]
+            for __command in __commands:
+                application_commands += extract_subcommands(__command)
+
+            return application_commands
+
         @rv_commands.command()
         async def help(self, ctx, *, query: Optional[str] = None):
             search = False
@@ -1486,7 +1520,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
             if search:
                 commands = [
-                    command for command in self.commands if (
+                    command for command in self.get_all_commands() if (
                         search_query.lower() in command.name.lower() or
                         (search_query.lower() in command.description.lower() if command.description else False) or
                         any(search_query.lower() in alias.lower() for alias in command.aliases)
@@ -1502,20 +1536,40 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     f' Or, use `{self.bot.command_prefix}help search:<query>` to search for commands.\n'+
                     f'Use `{self.bot.command_prefix}help page:<number>` to navigate through pages.'
                 )
-                commands = self.commands
+                commands = self.get_all_commands()
                 if query and not page:
                     try:
                         try:
                             command_focus = self.get_command(query)
                         except KeyError:
                             command_focus = self.get_command(query.lower())
+                        if type(command_focus) is rv_commands.Group:
+                            raise KeyError()
                     except KeyError:
-                        return await ctx.send('Invalid command. Use `search:command` to look up commands.')
+                        try:
+                            if type(command_focus) is rv_commands.Group:
+                                # space should not exist here
+                                raise KeyError()
+                            if ' ' in query:
+                                group: Union[rv_commands.Group, rv_commands.Command] = self.get_command(
+                                    query.split(' ')[0]
+                                )
+                                if not type(group) is rv_commands.Group:
+                                    raise KeyError()
+                                command_focus = group.get_command(query.split(' ')[1])
+                            else:
+                                raise KeyError()
+                        except KeyError:
+                            return await ctx.send('Invalid command. Use `search:command` to look up commands.')
 
             if command_focus:
-                embed.title += f' / {command_focus.name}'
+                cmdname = (
+                    f'{command_focus.parent.name} {command_focus.name}' if command_focus.parent else command_focus.name
+                )
+
+                embed.title += f' / {cmdname}'
                 embed.description = (
-                    f'# `{self.bot.command_prefix}{command_focus.name}`\n'+
+                    f'# `{self.bot.command_prefix}{cmdname}`\n'+
                     f'{command_focus.description or "No description provided"}'
                 )
 
@@ -1525,11 +1579,19 @@ class Revolt(commands.Cog,name='Revolt Support'):
                         value='\n'.join([f'`{self.bot.command_prefix}{alias}`' for alias in command_focus.aliases])
                     )
 
-                embed.add_field(
-                    name='Usage',
-                    value=f'`{self.bot.command_prefix}{command_focus.get_usage()[1:]}`'
+                usage = (
+                    command_focus.get_usage()[1:] if command_focus.get_usage().startswith(' ') else
+                    command_focus.get_usage()
                 )
+                embed.add_field(name='Usage', value=f'`{self.bot.command_prefix}{usage}`')
             else:
+                commands = await self.bot.loop.run_in_executor(
+                    None, lambda: sorted(
+                        commands,
+                        key=lambda x: f'{x.parent.name} {x.name}' if x.parent else x.name
+                    )
+                )
+
                 maxpage = (len(commands) - 1) // limit
 
                 if page_number < 0:
@@ -1543,8 +1605,12 @@ class Revolt(commands.Cog,name='Revolt Support'):
                         break
 
                     command = commands[offset + index]
+                    cmdname = (
+                        f'{command.parent.name} {command.name}' if command.parent else command.name
+                    )
+
                     embed.add_field(
-                        name=f'`{self.bot.command_prefix}{command.name}`',
+                        name=f'`{self.bot.command_prefix}{cmdname}`',
                         value=command.description or 'No description provided'
                     )
                     counted += 1
