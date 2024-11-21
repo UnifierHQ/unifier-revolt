@@ -1418,7 +1418,8 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     f'{pinfo.get("product_name","unknown")} is made by '+
                     f'[{pinfo.get("maintainer","unknown")}]({pinfo.get("maintainer_profile","unknown")}), a team '+
                     'dedicated to making cross-platform communication better for everyone.'
-                )
+                ),
+                color=self.bot.colors.unifier
             )
 
             embed.add_field(
