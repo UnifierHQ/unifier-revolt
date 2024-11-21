@@ -1463,7 +1463,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 text=(
                     f'Unifier version {vinfo.get("version","unknown")}'+
                     f' - Revolt Support version {pluginfo.get("version","unknown")}\n'+
-                    f'Using Nextcord {nextcord.__version__} and revolt.py {revolt.__version__} on Python '+
+                    f'Using Nextcord {nextcord.__version__} and Revolt.py {revolt.__version__} on Python '+
                     f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
                 )
             )
@@ -1499,7 +1499,11 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
             if query:
                 if query.lower().startswith('page:'):
-                    possible_page_number, query = query.split(' ', 1)
+                    items = query.split(' ', 1)
+                    possible_page_number = items[0][5:]
+                    if len(items) > 1:
+                        query = items[1]
+
                     page = True
 
                     try:
@@ -1521,7 +1525,9 @@ class Revolt(commands.Cog,name='Revolt Support'):
             if search:
                 commands = [
                     command for command in self.get_all_commands() if (
-                        search_query.lower() in command.name.lower() or
+                        search_query.lower() in (
+                            f'{command.parent.name} {command.name}' if command.parent else command.name
+                        ).lower() or
                         (search_query.lower() in command.description.lower() if command.description else False) or
                         any(search_query.lower() in alias.lower() for alias in command.aliases)
                     )
@@ -1632,7 +1638,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 offset = page_number * limit
                 counted = 0
                 for index in range(limit):
-                    if offset + index >= len(commands):
+                    if (offset + index) >= len(commands):
                         break
 
                     command = commands[offset + index]
