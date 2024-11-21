@@ -338,9 +338,11 @@ class Revolt(commands.Cog,name='Revolt Support'):
                         'Parent message could not be deleted. I may be missing the `Manage Messages` permission.'
                     )
 
-            if (message.content.lower().startswith('is unifier down') or
-                    message.content.lower().startswith('unifier not working')):
-                await message.channel.send('unifier is not down', replies=[revolt.MessageReply(message)])
+            if (
+                    message.content.lower().startswith('is unifier down') or
+                    message.content.lower().startswith('unifier not working')
+            ):
+                await message.channel.send('no', replies=[revolt.MessageReply(message)])
 
             tasks = []
             parent_id = None
@@ -566,7 +568,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
         @rv_commands.command()
         async def addmod(self, ctx, *, userid):
             if not ctx.author.id in self.bot.admins:
-                return await ctx.send('You are not a bot administrator.')
+                return await ctx.send('You do not have the permissions to run this command.')
             userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
             user = self.get_user(userid)
             if not user:
@@ -574,7 +576,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             if userid in self.bot.db['moderators']:
                 return await ctx.send('This user is already a moderator.')
             if userid in self.bot.admins or user.bot:
-                return await ctx.send('are you fr? you\'re a moderator.')
+                return await ctx.send('are you fr')
             self.bot.db['moderators'].append(userid)
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send(f'**{user.name}#{user.discriminator}** is now a moderator!')
@@ -582,7 +584,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
         @rv_commands.command(aliases=['remmod', 'delmod'])
         async def delmod(self, ctx, *, userid):
             if not ctx.author.id in self.bot.admins:
-                return await ctx.send('You are not a bot administrator.')
+                return await ctx.send('You do not have the permissions to run this command.')
             userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
             user = self.get_user(userid)
             if not user:
@@ -590,17 +592,17 @@ class Revolt(commands.Cog,name='Revolt Support'):
             if not userid in self.bot.db['moderators']:
                 return await ctx.send('This user is not a moderator.')
             if userid in self.bot.admins or user.bot:
-                return await ctx.send('are you fr? you\'re already a admin')
+                return await ctx.send('are you fr')
             self.bot.db['moderators'].remove(userid)
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send(f'**{user.name}#{user.discriminator}** is no longer a moderator!')
 
         @rv_commands.command(name='create-room', aliases=['make'])
-        async def make(self,ctx,*,room=None):
+        async def create_room(self,ctx,*,room=None):
             force_private = False
             if not ctx.author.id in self.bot.admins:
                 if self.compatibility_mode or not self.bot.config['enable_private_rooms']:
-                    return await ctx.send('Only administrators can create rooms.')
+                    return await ctx.send('Only admins can create rooms.')
                 force_private = True
 
             if room:
