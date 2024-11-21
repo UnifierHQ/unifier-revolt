@@ -34,6 +34,7 @@ import datetime
 import re
 import json
 import sys
+from typing import Optional
 
 try:
     import ujson as json  # pylint: disable=import-error
@@ -85,15 +86,20 @@ class Embed(revolt.SendableEmbed):
         self.fields = []
         self.raw_description = kwargs.get('description', None)
         self.raw_colour = kwargs.get('color', None) or kwargs.get('colour', None)
+        self.footer = None
 
     @property
     def description(self):
         if self.fields:
-            return (
+            toreturn = (
                 (self.raw_description + '\n\n') if self.raw_description else ''
             )+ '\n\n'.join([f'**{field.name}**\n{field.value}' for field in self.fields])
         else:
-            return self.raw_description
+            toreturn = self.raw_description
+        if self.footer:
+            footer_text = "\n".join([f'##### {line}' for line in self.footer.split('\n')])
+            toreturn = f'{toreturn}\n\n{footer_text}'
+        return toreturn
 
     @description.setter
     def description(self, value):
@@ -124,6 +130,9 @@ class Embed(revolt.SendableEmbed):
 
     def set_field_at(self, index, name, value):
         self.fields[index] = EmbedField(name, value)
+
+    def set_footer(self, text):
+        self.footer = text
 
 
 def encrypt_string(hash_string):
@@ -780,7 +789,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send('Room renamed!')
 
-        @rv_commands.command(aliases=['connect','federate'])
+        @rv_commands.command(aliases=['connect','link'])
         async def bind(self,ctx,*,room):
             if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
                 return await ctx.send('You don\'t have the necessary permissions.')
@@ -1432,15 +1441,120 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 value=f'{terms_hyperlink}\n{privacy_hyperlink}'
             )
 
-            embed.add_field(
-                name='Version info',
-                value=(
+            embed.set_footer(
+                text=(
                     f'Unifier version {vinfo.get("version","unknown")}'+
                     f' - Revolt Support version {pluginfo.get("version","unknown")}\n'+
                     f'Using Nextcord {nextcord.__version__} and revolt.py {revolt.__version__} on Python '+
                     f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}'
                 )
             )
+            await ctx.send(embed=embed)
+
+        @rv_commands.command()
+        async def help(self, ctx, *, query: Optional[str] = None):
+            search = False
+            page = False
+            search_query = ''
+            page_number = 0
+            command_focus = None
+            limit = 20
+
+            if query:
+                if query.lower().startswith('page:'):
+                    possible_page_number, query = query.split(' ', 1)
+                    page = True
+
+                    try:
+                        page_number = int(possible_page_number) - 1
+                    except:
+                        page_number = 0
+
+                if query.lower().startswith('search:'):
+                    query = query[7:]
+                    search_query = query
+                    search = True
+
+            embed = Embed(
+                title=f'{self.user.display_name or self.user.name} help',
+                description=f'Run `{self.bot.command_prefix}help <command>` to view more details of a command.',
+                color=self.bot.colors.unifier
+            )
+
+            if search:
+                commands = [
+                    command for command in self.commands if (
+                        search_query.lower() in command.name.lower() or
+                        (search_query.lower() in command.description.lower() if command.description else False) or
+                        any(search_query.lower() in alias.lower() for alias in command.aliases)
+                    )
+                ]
+                embed.title += ' / search'
+                embed.description = (
+                    f'Searching: {search_query} (**{len(commands)}** results)\n{embed.description}\n'+
+                    f'Use `{self.bot.command_prefix}help page:<number> search:{search_query}` to navigate through pages.'
+                )
+            else:
+                embed.description += (
+                    f' Or, use `{self.bot.command_prefix}help search:<query>` to search for commands.\n'+
+                    f'Use `{self.bot.command_prefix}help page:<number>` to navigate through pages.'
+                )
+                commands = self.commands
+                if query and not page:
+                    try:
+                        try:
+                            command_focus = self.get_command(query)
+                        except KeyError:
+                            command_focus = self.get_command(query.lower())
+                    except KeyError:
+                        return await ctx.send('Invalid command. Use `search:command` to look up commands.')
+
+            if command_focus:
+                embed.title += f' / {command_focus.name}'
+                embed.description = (
+                    f'# `{self.bot.command_prefix}{command_focus.name}`\n'+
+                    f'{command_focus.description or "No description provided"}'
+                )
+
+                if command_focus.aliases:
+                    embed.add_field(
+                        name='Aliases',
+                        value='\n'.join([f'`{self.bot.command_prefix}{alias}`' for alias in command_focus.aliases])
+                    )
+
+                embed.add_field(
+                    name='Usage',
+                    value=f'`{self.bot.command_prefix}{command_focus.get_usage()[1:]}`'
+                )
+            else:
+                maxpage = (len(commands) - 1) // limit
+
+                if page_number < 0:
+                    page_number = 0
+                elif page_number > maxpage:
+                    page_number = maxpage
+                offset = page_number * limit
+                counted = 0
+                for index in range(limit):
+                    if offset + index >= len(commands):
+                        break
+
+                    command = commands[offset + index]
+                    embed.add_field(
+                        name=f'`{self.bot.command_prefix}{command.name}`',
+                        value=command.description or 'No description provided'
+                    )
+                    counted += 1
+
+                embed.set_footer(
+                    text=f'Page {page_number + 1} of {maxpage + 1}'
+                )
+
+                if search:
+                    embed.set_footer(
+                        text=f'{embed.footer} | {offset+1} - {offset+counted} of {len(commands)} results'
+                    )
+
             await ctx.send(embed=embed)
 
     async def revolt_boot(self):
@@ -1457,9 +1571,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 async with aiohttp.ClientSession() as session:
                     self.bot.revolt_session = session
                     if hasattr(self.bot, 'tokenstore'):
-                        self.bot.revolt_client = self.Client(session, self.bot.tokenstore.retrieve('TOKEN_REVOLT'))
+                        self.bot.revolt_client = self.Client(session, self.bot.tokenstore.retrieve('TOKEN_REVOLT'), help_command=None)
                     else:
-                        self.bot.revolt_client = self.Client(session, os.environ.get('TOKEN_REVOLT'))
+                        self.bot.revolt_client = self.Client(session, os.environ.get('TOKEN_REVOLT'), help_command=None)
                     self.bot.revolt_client.add_bot(self.bot)
                     self.bot.revolt_client.add_logger(log.buildlogger(self.bot.package, 'revolt.client', self.bot.loglevel))
                     self.logger.info('Booting Revolt client...')
