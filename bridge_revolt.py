@@ -634,6 +634,17 @@ class Revolt(commands.Cog,name='Revolt Support'):
                         return await msg.edit(content='Could not generate a unique room name in 10 tries.')
                     else:
                         return await ctx.send('Could not generate a unique room name in 10 tries.')
+            elif not private and not room:
+                for _ in range(10):
+                    room = 'public-' + ''.join(
+                        random.choice(string.ascii_lowercase + string.digits) for _ in range(10))
+                    if not room in self.bot.bridge.rooms:
+                        break
+                if room in self.bot.bridge.rooms:
+                    if msg:
+                        return await msg.edit(content='Could not generate a unique room name in 10 tries.')
+                    else:
+                        return await ctx.send('Could not generate a unique room name in 10 tries.')
 
             if self.compatibility_mode:
                 self.bot.db['rooms'].update({room: {}})
