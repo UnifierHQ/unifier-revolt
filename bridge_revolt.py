@@ -26,7 +26,6 @@ import revolt
 import traceback
 import time
 from utils import log
-import hashlib
 import random
 import string
 import os
@@ -134,12 +133,6 @@ class Embed(revolt.SendableEmbed):
 
     def set_footer(self, text):
         self.footer = text
-
-
-def encrypt_string(hash_string):
-    sha_signature = \
-        hashlib.sha256(hash_string.encode()).hexdigest()
-    return sha_signature
 
 def is_room_restricted(room,db,compatibility_mode):
     try:
