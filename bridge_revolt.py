@@ -1306,33 +1306,81 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 index = 0
             if index < 1:
                 index = 0
-            embed = Embed(title=f'{self.user.display_name or self.user.name} Rooms', color=self.bot.colors.unifier)
 
-            for i in range(20*index,20*(index+1)):
-                if i >= len(self.bot.bridge.rooms):
-                    break
+            msg = None
+            skip_edit = False
+            cooldown = time.time()
 
-                room = self.bot.bridge.rooms[i]
-                roominfo = self.bot.bridge.get_room(room)
-                if (private and not roominfo['meta']['private']) or (not private and roominfo['meta']['private']):
-                    continue
+            while True:
+                embed = Embed(title=f'{self.user.display_name or self.user.name} Rooms', color=self.bot.colors.unifier)
 
-                if private:
-                    if not self.bot.bridge.can_access_room(room, ctx.author, platform='revolt'):
+                for i in range(20*index,20*(index+1)):
+                    if i >= len(self.bot.bridge.rooms):
+                        break
+
+                    room = self.bot.bridge.rooms[i]
+                    roominfo = self.bot.bridge.get_room(room)
+                    if (private and not roominfo['meta']['private']) or (not private and roominfo['meta']['private']):
                         continue
 
-                if roominfo['meta']['restricted'] and not ctx.author.id in self.bot.admins:
+                    if private:
+                        if not self.bot.bridge.can_access_room(room, ctx.author, platform='revolt'):
+                            continue
+
+                    if roominfo['meta']['restricted'] and not ctx.author.id in self.bot.admins:
+                        continue
+
+                    embed.add_field(name=roominfo['meta']['display_name'] or room, value=roominfo['meta']['description'] or 'No description provided')
+
+                if len(embed.fields) == 0:
+                    embed.add_field(name='No rooms',value='There\'s no rooms here!')
+
+                maxpage = (len(self.bot.bridge.rooms) // 20) + 1
+                embed.title = embed.title + f' (Page {index+1} of {maxpage})'
+
+                if not msg:
+                    msg = await ctx.send(
+                        embed=embed,
+                        interactions=revolt.MessageInteractions(
+                            reactions=['\U00002B05\U0000FE0F', '\U000027A1\U0000FE0F'], restrict_reactions=True
+                        )
+                    )
+                elif not skip_edit:
+                    await msg.edit(embeds=[embed])
+
+                skip_edit = False
+
+                def check(message, user, _emoji_id):
+                    return message.id == msg.id and user.id == ctx.author.id
+
+                try:
+                    _message, _user, emoji_id = await self.wait_for('reaction_add', check=check, timeout=60)
+                except:
+                    await msg.edit(content='Panel has expired.')
+                    break
+
+                await msg.remove_reaction(emoji_id, user=ctx.author)
+
+                if time.time() < cooldown:
+                    await ctx.send(
+                        f'You\'re changing pages too fast. Try again in {round(cooldown - time.time())} seconds.',
+                        replies=[revolt.MessageReply(msg)]
+                    )
+                    skip_edit = True
                     continue
+                else:
+                    cooldown = time.time() + 5
 
-                embed.add_field(name=roominfo['meta']['display_name'] or room, value=roominfo['meta']['description'] or 'No description provided')
-
-            if len(embed.fields) == 0:
-                embed.add_field(name='No rooms',value='There\'s no rooms here!')
-
-            maxpage = (len(self.bot.bridge.rooms) // 20) + 1
-            embed.title = embed.title + f' (Page {index+1} of {maxpage})'
-
-            await ctx.send(embed=embed)
+                if emoji_id == '\U00002B05\U0000FE0F':
+                    if index <= 0:
+                        index = 0
+                    else:
+                        index -= 1
+                elif emoji_id == '\U000027A1\U0000FE0F':
+                    if index > maxpage:
+                        index = maxpage
+                    else:
+                        index += 1
 
         @moderation.command(aliases=['find'])
         async def identify(self, ctx):
@@ -1502,170 +1550,200 @@ class Revolt(commands.Cog,name='Revolt Support'):
             limit = 20
 
             if query:
-                if query.lower().startswith('page:'):
-                    items = query.split(' ', 1)
-                    possible_page_number = items[0][5:]
-                    if len(items) > 1:
-                        query = items[1]
-
-                    page = True
-
-                    try:
-                        page_number = int(possible_page_number) - 1
-                    except:
-                        page_number = 0
-
                 if query.lower().startswith('search:'):
                     query = query[7:]
                     search_query = query
                     search = True
 
-            embed = Embed(
-                title=f'{self.user.display_name or self.user.name} help',
-                description=f'Run `{self.bot.command_prefix}help <command>` to view more details of a command.',
-                color=self.bot.colors.unifier
-            )
+            msg: Optional[revolt.Message] = None
+            skip_edit = False
+            cooldown = time.time()
 
-            if search:
-                commands = [
-                    command for command in self.get_all_commands() if (
-                        search_query.lower() in (
-                            f'{command.parent.name} {command.name}' if command.parent else command.name
-                        ).lower() or
-                        (search_query.lower() in command.description.lower() if command.description else False) or
-                        any(search_query.lower() in alias.lower() for alias in command.aliases)
-                    )
-                ]
-
-                for command in commands:
-                    try:
-                        canrun = await ctx.can_run(command=command)
-                    except:
-                        canrun = False
-
-                    if not canrun:
-                        commands.remove(command)
-
-                embed.title += ' / search'
-                embed.description = (
-                    f'Searching: {search_query} (**{len(commands)}** results)\n{embed.description}\n'+
-                    f'Use `{self.bot.command_prefix}help page:<number> search:{search_query}` to navigate through pages.'
-                )
-            else:
-                embed.description += (
-                    f' Or, use `{self.bot.command_prefix}help search:<query>` to search for commands.\n'+
-                    f'Use `{self.bot.command_prefix}help page:<number>` to navigate through pages.'
-                )
-                commands = self.get_all_commands()
-
-                for command in commands:
-                    try:
-                        canrun = await ctx.can_run(command=command)
-                    except:
-                        canrun = False
-
-                    if not canrun:
-                        commands.remove(command)
-
-                if query and not page:
-                    found = False
-                    try:
-                        try:
-                            command_focus = self.get_command(query)
-                        except KeyError:
-                            command_focus = self.get_command(query.lower())
-                        if type(command_focus) is rv_commands.Group:
-                            raise KeyError()
-                        found = True
-                    except KeyError:
-                        try:
-                            if type(command_focus) is rv_commands.Group:
-                                # space should not exist here
-                                raise KeyError()
-                            if ' ' in query:
-                                group: Union[rv_commands.Group, rv_commands.Command] = self.get_command(
-                                    query.split(' ')[0]
-                                )
-                                if not type(group) is rv_commands.Group:
-                                    raise KeyError()
-                                command_focus = group.get_command(query.split(' ')[1])
-                                found = True
-                            else:
-                                raise KeyError()
-                        except KeyError:
-                            pass
-
-                    try:
-                        canrun = await ctx.can_run(command=command_focus)
-                    except:
-                        canrun = False
-
-                    if not canrun or not found:
-                        await ctx.send('Invalid command. Use `search:command` to look up commands.')
-
-            if command_focus:
-                cmdname = (
-                    f'{command_focus.parent.name} {command_focus.name}' if command_focus.parent else command_focus.name
-                )
-
-                embed.title += f' / {cmdname}'
-                embed.description = (
-                    f'# `{self.bot.command_prefix}{cmdname}`\n'+
-                    f'{command_focus.description or "No description provided"}'
-                )
-
-                if command_focus.aliases:
-                    embed.add_field(
-                        name='Aliases',
-                        value='\n'.join([f'`{self.bot.command_prefix}{alias}`' for alias in command_focus.aliases])
-                    )
-
-                usage = (
-                    command_focus.get_usage()[1:] if command_focus.get_usage().startswith(' ') else
-                    command_focus.get_usage()
-                )
-                embed.add_field(name='Usage', value=f'`{self.bot.command_prefix}{usage}`')
-            else:
-                commands = await self.bot.loop.run_in_executor(
-                    None, lambda: sorted(
-                        commands,
-                        key=lambda x: f'{x.parent.name} {x.name}' if x.parent else x.name
-                    )
-                )
-
-                maxpage = (len(commands) - 1) // limit
-
-                if page_number < 0:
-                    page_number = 0
-                elif page_number > maxpage:
-                    page_number = maxpage
-                offset = page_number * limit
-                counted = 0
-                for index in range(limit):
-                    if (offset + index) >= len(commands):
-                        break
-
-                    command = commands[offset + index]
-                    cmdname = (
-                        f'{command.parent.name} {command.name}' if command.parent else command.name
-                    )
-
-                    embed.add_field(
-                        name=f'`{self.bot.command_prefix}{cmdname}`',
-                        value=command.description or 'No description provided'
-                    )
-                    counted += 1
-
-                embed.set_footer(
-                    text=f'Page {page_number + 1} of {maxpage + 1}'
+            while True:
+                embed = Embed(
+                    title=f'{self.user.display_name or self.user.name} help',
+                    description=f'Run `{self.bot.command_prefix}help <command>` to view more details of a command.',
+                    color=self.bot.colors.unifier
                 )
 
                 if search:
-                    embed.set_footer(
-                        text=f'{embed.footer} | {offset+1} - {offset+counted} of {len(commands)} results'
+                    commands = [
+                        command for command in self.get_all_commands() if (
+                            search_query.lower() in (
+                                f'{command.parent.name} {command.name}' if command.parent else command.name
+                            ).lower() or
+                            (search_query.lower() in command.description.lower() if command.description else False) or
+                            any(search_query.lower() in alias.lower() for alias in command.aliases)
+                        )
+                    ]
+
+                    for command in commands:
+                        try:
+                            canrun = await ctx.can_run(command=command)
+                        except:
+                            canrun = False
+
+                        if not canrun:
+                            commands.remove(command)
+
+                    embed.title += ' / search'
+                    embed.description = f'Searching: {search_query} (**{len(commands)}** results)\n{embed.description}'
+                else:
+                    embed.description += (
+                        f' Or, use `{self.bot.command_prefix}help search:<query>` to search for commands.'
+                    )
+                    commands = self.get_all_commands()
+
+                    for command in commands:
+                        try:
+                            canrun = await ctx.can_run(command=command)
+                        except:
+                            canrun = False
+
+                        if not canrun:
+                            commands.remove(command)
+
+                    if query and not page:
+                        found = False
+                        try:
+                            try:
+                                command_focus = self.get_command(query)
+                            except KeyError:
+                                command_focus = self.get_command(query.lower())
+                            if type(command_focus) is rv_commands.Group:
+                                raise KeyError()
+                            found = True
+                        except KeyError:
+                            try:
+                                if type(command_focus) is rv_commands.Group:
+                                    # space should not exist here
+                                    raise KeyError()
+                                if ' ' in query:
+                                    group: Union[rv_commands.Group, rv_commands.Command] = self.get_command(
+                                        query.split(' ')[0]
+                                    )
+                                    if not type(group) is rv_commands.Group:
+                                        raise KeyError()
+                                    command_focus = group.get_command(query.split(' ')[1])
+                                    found = True
+                                else:
+                                    raise KeyError()
+                            except KeyError:
+                                pass
+
+                        try:
+                            canrun = await ctx.can_run(command=command_focus)
+                        except:
+                            canrun = False
+
+                        if not canrun or not found:
+                            await ctx.send('Invalid command. Use `search:command` to look up commands.')
+
+                if command_focus:
+                    cmdname = (
+                        f'{command_focus.parent.name} {command_focus.name}' if command_focus.parent else command_focus.name
                     )
 
-            await ctx.send(embed=embed)
+                    embed.title += f' / {cmdname}'
+                    embed.description = (
+                        f'# `{self.bot.command_prefix}{cmdname}`\n'+
+                        f'{command_focus.description or "No description provided"}'
+                    )
+
+                    if command_focus.aliases:
+                        embed.add_field(
+                            name='Aliases',
+                            value='\n'.join([f'`{self.bot.command_prefix}{alias}`' for alias in command_focus.aliases])
+                        )
+
+                    usage = (
+                        command_focus.get_usage()[1:] if command_focus.get_usage().startswith(' ') else
+                        command_focus.get_usage()
+                    )
+                    embed.add_field(name='Usage', value=f'`{self.bot.command_prefix}{usage}`')
+                else:
+                    commands = await self.bot.loop.run_in_executor(
+                        None, lambda: sorted(
+                            commands,
+                            key=lambda x: f'{x.parent.name} {x.name}' if x.parent else x.name
+                        )
+                    )
+
+                    maxpage = (len(commands) - 1) // limit
+
+                    if page_number < 0:
+                        page_number = 0
+                    elif page_number > maxpage:
+                        page_number = maxpage
+                    offset = page_number * limit
+                    counted = 0
+                    for index in range(limit):
+                        if (offset + index) >= len(commands):
+                            break
+
+                        command = commands[offset + index]
+                        cmdname = (
+                            f'{command.parent.name} {command.name}' if command.parent else command.name
+                        )
+
+                        embed.add_field(
+                            name=f'`{self.bot.command_prefix}{cmdname}`',
+                            value=command.description or 'No description provided'
+                        )
+                        counted += 1
+
+                    embed.set_footer(
+                        text=f'Page {page_number + 1} of {maxpage + 1}'
+                    )
+
+                    if search:
+                        embed.set_footer(
+                            text=f'{embed.footer} | {offset+1} - {offset+counted} of {len(commands)} results'
+                        )
+
+                if not msg:
+                    msg = await ctx.send(
+                        embed=embed,
+                        interactions=revolt.MessageInteractions(
+                            reactions=['\U00002B05\U0000FE0F', '\U000027A1\U0000FE0F'], restrict_reactions=True
+                        )
+                    )
+                elif not skip_edit:
+                    await msg.edit(embeds=[embed])
+
+                skip_edit = False
+
+                def check(message, user, _emoji_id):
+                    return message.id == msg.id and user.id == ctx.author.id
+
+                try:
+                    _message, _user, emoji_id = await self.wait_for('reaction_add', check=check, timeout=60)
+                except:
+                    await msg.edit(content='Panel has expired.')
+                    break
+
+                await msg.remove_reaction(emoji_id, user=ctx.author)
+
+                if time.time() < cooldown:
+                    await ctx.send(
+                        f'You\'re changing pages too fast. Try again in {round(cooldown - time.time())} seconds.',
+                        replies=[revolt.MessageReply(msg)]
+                    )
+                    skip_edit = True
+                    continue
+                else:
+                    cooldown = time.time() + 5
+
+                if emoji_id == '\U00002B05\U0000FE0F':
+                    if page_number <= 0:
+                        page_number = 0
+                    else:
+                        page_number -= 1
+                elif emoji_id == '\U000027A1\U0000FE0F':
+                    if page_number > maxpage:
+                        page_number = maxpage
+                    else:
+                        page_number += 1
 
     async def revolt_boot(self):
         if self.bot.revolt_client is None:
