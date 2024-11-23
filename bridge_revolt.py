@@ -1610,6 +1610,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             page = False
             search_query = ''
             page_number = 0
+            maxpage = 0
             command_focus = None
             limit = 20
 
