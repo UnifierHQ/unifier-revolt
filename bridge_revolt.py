@@ -1610,7 +1610,6 @@ class Revolt(commands.Cog,name='Revolt Support'):
             page = False
             search_query = ''
             page_number = 0
-            maxpage = 0
             command_focus = None
             limit = 20
 
@@ -1726,45 +1725,47 @@ class Revolt(commands.Cog,name='Revolt Support'):
                         command_focus.get_usage()
                     )
                     embed.add_field(name='Usage', value=f'`{self.bot.command_prefix}{usage}`')
-                else:
-                    commands = await self.bot.loop.run_in_executor(
-                        None, lambda: sorted(
-                            commands,
-                            key=lambda x: f'{x.parent.name} {x.name}' if x.parent else x.name
-                        )
+                    await ctx.send(embed=embed)
+                    break
+
+                commands = await self.bot.loop.run_in_executor(
+                    None, lambda: sorted(
+                        commands,
+                        key=lambda x: f'{x.parent.name} {x.name}' if x.parent else x.name
+                    )
+                )
+
+                maxpage = (len(commands) - 1) // limit
+
+                if page_number < 0:
+                    page_number = 0
+                elif page_number > maxpage:
+                    page_number = maxpage
+                offset = page_number * limit
+                counted = 0
+                for index in range(limit):
+                    if (offset + index) >= len(commands):
+                        break
+
+                    command = commands[offset + index]
+                    cmdname = (
+                        f'{command.parent.name} {command.name}' if command.parent else command.name
                     )
 
-                    maxpage = (len(commands) - 1) // limit
+                    embed.add_field(
+                        name=f'`{self.bot.command_prefix}{cmdname}`',
+                        value=command.description or 'No description provided'
+                    )
+                    counted += 1
 
-                    if page_number < 0:
-                        page_number = 0
-                    elif page_number > maxpage:
-                        page_number = maxpage
-                    offset = page_number * limit
-                    counted = 0
-                    for index in range(limit):
-                        if (offset + index) >= len(commands):
-                            break
+                embed.set_footer(
+                    text=f'Page {page_number + 1} of {maxpage + 1}'
+                )
 
-                        command = commands[offset + index]
-                        cmdname = (
-                            f'{command.parent.name} {command.name}' if command.parent else command.name
-                        )
-
-                        embed.add_field(
-                            name=f'`{self.bot.command_prefix}{cmdname}`',
-                            value=command.description or 'No description provided'
-                        )
-                        counted += 1
-
+                if search:
                     embed.set_footer(
-                        text=f'Page {page_number + 1} of {maxpage + 1}'
+                        text=f'{embed.footer} | {offset+1} - {offset+counted} of {len(commands)} results'
                     )
-
-                    if search:
-                        embed.set_footer(
-                            text=f'{embed.footer} | {offset+1} - {offset+counted} of {len(commands)} results'
-                        )
 
                 if not msg:
                     msg = await ctx.send(
