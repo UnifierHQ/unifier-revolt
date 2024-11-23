@@ -640,7 +640,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             force_private = False
             if not ctx.author.id in self.bot.admins:
                 if self.compatibility_mode or not self.bot.config['enable_private_rooms']:
-                    return await ctx.send('Only administrators can create rooms.')
+                    return await ctx.send('Only admins can create rooms.')
                 force_private = True
 
             if room:
@@ -648,7 +648,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 if not bool(re.match("^[A-Za-z0-9_-]*$", room)):
                     return await ctx.send(f'Room names may only contain alphabets, numbers, dashes, and underscores.')
                 if room in list(self.bot.db['rooms'].keys()):
-                    return await ctx.send(f'This room already exists. Try creating it with another name')
+                    return await ctx.send(f'This room already exists!')
 
             private = False
             roomtype = 'private' if force_private else 'public'
@@ -1515,31 +1515,14 @@ class Revolt(commands.Cog,name='Revolt Support'):
         @rv_commands.command(aliases=['remmod', 'delmod'])
         async def delmod(self, ctx, *, userid):
             if not ctx.author.id in self.bot.admins:
-                embed = Embed(
-                    title=f'No Permission',
-                    description=f':x: You are not a administrator of this bot therefore you cannot run this command. If you think this is a mistake, reach out to my owner for help.',
-                    color=self.bot.colors.unifier
-                )
-                return await ctx.send(embed=embed)
+                return await ctx.send('You do not have the permissions to run this command.')
             userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
-            try:
-                user = self.get_user(userid)
-            except LookupError:
-                user = None
+            user = self.get_user(userid)
             if not user:
-                embed = Embed(
-                    title=f'Invalid user',
-                    description=f':x: The user you provided is invalid as I cannot find them. Please either @ping them or send their user ID instead.',
-                    color=self.bot.colors.unifier
-                )
-                return await ctx.send(embed=embed)
+                return await ctx.send(
+                    'This is not a valid user. You can either @ping to select a user **or** use their user ID.')
             if not userid in self.bot.db['moderators']:
-                embed = Embed(
-                    title=f'Invalid Moderator',
-                    description=f':x: The user you provided is not a moderator. Make sure you\'re .',
-                    color=self.bot.colors.unifier
-                )
-                return await ctx.send(embed=embed)
+                return await ctx.send('This user is not a moderator.')
             if userid in self.bot.admins or user.bot:
                 return await ctx.send('are you fr')
             self.bot.db['moderators'].remove(userid)
