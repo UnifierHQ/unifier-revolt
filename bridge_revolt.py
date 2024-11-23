@@ -256,7 +256,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 asyncio.create_task(listener(*args))
 
             if func := getattr(self, f"on_{event}", None):
-                asyncio.create_task(func(*args))
+                asyncio.create_task(func(*args)) # pylint: disable=E1102
 
         def add_bot(self,bot):
             """Adds a Discord bot to the Revolt client."""
