@@ -14,6 +14,35 @@ GNU Affero General Public License for more details.
 
 You should have received a copy of the GNU Affero General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+---------
+
+This program includes subprograms from works that are licensed under the
+MIT license. Licenses/copyright notices for those works have been listed
+below.
+
+---
+
+Revolt.py
+Copyright (c) 2021-present Zomatree
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 """
 
 import nextcord
@@ -34,7 +63,7 @@ import datetime
 import re
 import json
 import sys
-from typing import Optional, Union
+from typing import Optional, Union, Any
 
 try:
     import ujson as json  # pylint: disable=import-error
@@ -193,6 +222,41 @@ class Revolt(commands.Cog,name='Revolt Support'):
             self.bot = None
             self.logger = None
             self.compatibility_mode = False
+
+        def dispatch(self, event: str, *args: Any) -> None:
+            """Dispatch an event, this is typically used for testing and internals.
+
+            Parameters
+            ----------
+            event: class:`str`
+                The name of the event to dispatch, not including `on_`
+            args: :class:`Any`
+                The arguments passed to the event
+            """
+
+            # This is basically a slightly modified version of Revolt.py's dispatch function,
+            # but it will ignore invalid state errors for the sake of keeping the console log
+            # clean.
+
+            if temp_listeners := self.temp_listeners.get(event, None):
+                for check, future in temp_listeners:
+                    if check(*args):
+                        try:
+                            if len(args) == 1:
+                                future.set_result(args[0])
+                            else:
+                                future.set_result(args)
+                        except asyncio.exceptions.InvalidStateError:
+                            # return to mimic original behavior, just without the error
+                            return
+
+                self.temp_listeners[event] = [(c, f) for c, f in temp_listeners if not f.done()]
+
+            for listener in self.listeners.get(event, []):
+                asyncio.create_task(listener(*args))
+
+            if func := getattr(self, f"on_{event}", None):
+                asyncio.create_task(func(*args))
 
         def add_bot(self,bot):
             """Adds a Discord bot to the Revolt client."""
