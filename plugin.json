@@ -2,8 +2,8 @@
   "id": "revolt",
   "name": "Revolt Support",
   "description": "Unifier Revolt Support extension",
-  "version": "v1.3.7",
-  "release": 37,
+  "version": "v1.4.0",
+  "release": 38,
   "minimum": 58,
   "services": [
     "bridge_platform"
