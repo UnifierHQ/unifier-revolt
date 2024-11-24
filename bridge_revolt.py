@@ -202,7 +202,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
     """An extension that enables Unifier to run on Revolt. Manages the Revolt instance, as well as Revolt-to-Revolt and Revolt-to-external bridging.
 
     Developed by Green"""
-    def __init__(self,bot):
+    def __init__(self, bot, tokenstore=None):
         self.bot = bot
         if not 'revolt' in self.bot.config.get('external', ['revolt']):
             # revolt is intentionally lowercase
@@ -212,6 +212,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             self.bot.revolt_session = None
             self.bot.revolt_client_task = asyncio.create_task(self.revolt_boot())
         self.logger = log.buildlogger(self.bot.package, 'revolt.core', self.bot.loglevel)
+        self.__tokenstore = tokenstore
 
     def db(self):
         return self.bot.db
@@ -1824,9 +1825,15 @@ class Revolt(commands.Cog,name='Revolt Support'):
             while True:
                 async with aiohttp.ClientSession() as session:
                     self.bot.revolt_session = session
-                    if hasattr(self.bot, 'tokenstore'):
+
+                    if self.__tokenstore:
+                        # v3.9.0 and above w/ restrictive tokenstore
+                        self.bot.revolt_client = self.Client(session, self.__tokenstore.retrieve('TOKEN_REVOLT'), help_command=None)
+                    elif hasattr(self.bot, 'tokenstore'):
+                        # v3.2.0 and above w/ normal tokenstore
                         self.bot.revolt_client = self.Client(session, self.bot.tokenstore.retrieve('TOKEN_REVOLT'), help_command=None)
                     else:
+                        # older versions w/o token encryption
                         self.bot.revolt_client = self.Client(session, os.environ.get('TOKEN_REVOLT'), help_command=None)
                     self.bot.revolt_client.add_bot(self.bot)
                     self.bot.revolt_client.add_logger(log.buildlogger(self.bot.package, 'revolt.client', self.bot.loglevel))
@@ -1879,5 +1886,5 @@ class Revolt(commands.Cog,name='Revolt Support'):
             self.logger.exception('Something went wrong!')
             await ctx.send('Something went wrong while restarting the instance.')
 
-def setup(bot):
-    bot.add_cog(Revolt(bot))
+def setup(bot, tokenstore=None):
+    bot.add_cog(Revolt(bot, tokenstore=tokenstore))

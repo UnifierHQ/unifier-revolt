@@ -46,6 +46,12 @@
       "license_url": "https://github.com/ethanfurman/aenum/blob/master/aenum/LICENSE"
     }
   },
+  "required_tokens": [
+    "TOKEN_REVOLT"
+  ],
+  "uses_tokenstore": [
+    "bridge_revolt.py"
+  ],
   "modules": [
     "bridge_revolt.py"
   ],
