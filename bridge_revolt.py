@@ -1827,7 +1827,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     self.bot.revolt_session = session
 
                     if self.__tokenstore:
-                        # v3.9.0 and above w/ restrictive tokenstore
+                        # v3.8.0 and above w/ restrictive tokenstore
                         self.bot.revolt_client = self.Client(session, self.__tokenstore.retrieve('TOKEN_REVOLT'), help_command=None)
                     elif hasattr(self.bot, 'tokenstore'):
                         # v3.2.0 and above w/ normal tokenstore
