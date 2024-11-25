@@ -131,7 +131,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ["3.12", "3.13"]
+        python-version: ["3.12"]
     steps:
     - name: Download Plugin
       uses: actions/checkout@v4
@@ -172,7 +172,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        python-version: ["3.12", "3.13"]
+        python-version: ["3.12"]
     steps:
     - name: Download Plugin
       uses: actions/checkout@v4
