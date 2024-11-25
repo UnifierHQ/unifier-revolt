@@ -866,7 +866,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     )
                     invite_link = str(room.lower())
                     if data['meta']['restricted'] and not ctx.author.id in self.bot.admins:
-                        return await ctx.send('Only admins can bind to restricted rooms.')
+                        return await ctx.send(':x: Only admins can bind to restricted rooms.')
                 except:
                     return await ctx.send(f'This isn\'t a valid room. Run `{self.bot.command_prefix}rooms` for a list of rooms.')
 
