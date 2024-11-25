@@ -168,7 +168,7 @@ jobs:
         pylint --enable-all-extensions --extension-pkg-allow-list=orjson,ujson --disable=R,C,W $(git ls-files '*.py')
 
   build-windows-balanced:
-    name: "Windows (Stable)"
+    name: "Windows (Balanced)"
     runs-on: windows-latest
     strategy:
       matrix:
