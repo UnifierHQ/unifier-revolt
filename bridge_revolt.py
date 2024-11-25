@@ -640,12 +640,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
         async def create_room(self,ctx,*,room=None):
             force_private = False
             if not ctx.author.id in self.bot.admins:
-                if self.compatibility_mode or not self.bot.config['enable_private_rooms']:
-                    embed = Embed(
-                        title=f'{self.user.display_name or self.user.name} Command Error',
-                        description=f':x: This command was not executed as you are not a bot administrator. Contact the owner of this bot for help.',
-                        color=self.bot.colors.unifier
-                    )
+                if self.compatibility_mode or not self.bot.config['enable_private_rooms']:                    
                     return await ctx.send(embed=Embed)
                 force_private = True
 
