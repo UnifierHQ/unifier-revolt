@@ -11,7 +11,7 @@
   "bridge_platform": "revolt",
   "shutdown": true,
   "requirements": [
-    "git+https://github.com/greeeen-dev/revolt.py.git",
+    "https://github.com/greeeen-dev/revolt.py/archive/refs/heads/master.zip",
     "ulid-py",
     "typing-extensions",
     "aenum"
