@@ -2,8 +2,8 @@
   "id": "revolt",
   "name": "Revolt Support",
   "description": "Unifier Revolt Support extension",
-  "version": "v1.3.9",
-  "release": 39,
+  "version": "v1.3.10",
+  "release": 40,
   "minimum": 58,
   "services": [
     "bridge_platform"
@@ -11,7 +11,7 @@
   "bridge_platform": "revolt",
   "shutdown": true,
   "requirements": [
-    "https://github.com/greeeen-dev/revolt.py/archive/refs/heads/master.zip",
+    "git+https://github.com/greeeen-dev/revolt.py.git",
     "ulid-py",
     "typing-extensions",
     "aenum"
