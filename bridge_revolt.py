@@ -1431,9 +1431,14 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                 binary = 'python3'
 
         msg = await ctx.send(f'{self.bot.ui_emojis.loading} Fixing...')
+
+        # Attempt to purge cache, it's ok if this fails
+        await self.bot.loop.run_in_executor(None, lambda: os.system(f'{binary} -m pip cache purge'))
+
+        # Attempt to install
         code = await self.bot.loop.run_in_executor(
             None, lambda: os.system(
-                f'{binary} -m pip install{user_option} --force git+https://github.com/greeeen-dev/revolt.py.git'
+                f'{binary} -m pip install{user_option} --force https://github.com/greeeen-dev/revolt.py/archive/refs/heads/master.zip'
             )
         )
 
