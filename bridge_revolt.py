@@ -24,7 +24,7 @@ import aiohttp
 import revolt
 import traceback
 import time
-from utils import log
+from utils import log, restrictions_legacy as r_legacy
 import hashlib
 import random
 import string
@@ -33,11 +33,14 @@ import emoji as pymoji
 import datetime
 import re
 import json
+import sys
 
 try:
     import ujson as json  # pylint: disable=import-error
 except:
     pass
+
+restrictions_legacy = r_legacy.Restrictions()
 
 mentions = nextcord.AllowedMentions(everyone=False, roles=False, users=False)
 
@@ -178,6 +181,7 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             self.bot.revolt_session = None
             self.bot.revolt_client_task = asyncio.create_task(self.revolt_boot())
         self.logger = log.buildlogger(self.bot.package, 'revolt.core', self.bot.loglevel)
+        restrictions_legacy.attach_bot(self.bot)
 
     def db(self):
         return self.bot.db
@@ -1379,10 +1383,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
                     break
 
     @commands.command(name='stop-revolt', hidden=True)
+    @restrictions_legacy.owner()
     async def stop_revolt(self, ctx):
         """Kills the Revolt client. This is automatically done when upgrading Unifier."""
-        if not ctx.author.id == self.bot.config['owner']:
-            return
         try:
             await self.bot.revolt_session.close()
             self.bot.revolt_client_task.cancel()
@@ -1396,10 +1399,9 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
             await ctx.send('Something went wrong while killing the instance.')
 
     @commands.command(name='restart-revolt', hidden=True)
+    @restrictions_legacy.owner()
     async def restart_revolt(self, ctx):
         """Restarts the Revolt client."""
-        if not ctx.author.id == self.bot.config['owner']:
-            return
         try:
             await self.bot.revolt_session.close()
             self.bot.revolt_client_task.cancel()
@@ -1411,6 +1413,34 @@ class Revolt(commands.Cog,name='<:revoltsupport:1211013978558304266> Revolt Supp
         except:
             self.logger.exception('Something went wrong!')
             await ctx.send('Something went wrong while restarting the instance.')
+
+    @commands.command(name='fix-revolt', hidden=True)
+    @restrictions_legacy.owner()
+    async def fix_revolt(self, ctx):
+        """Fixes Revolt permissions check bug by switching to a patched version. You only need to run this once."""
+        with open('boot_config.json') as file:
+            boot_config = json.load(file)
+
+        binary = boot_config['bootloader'].get('binary')
+        user_option = ' --user' if not boot_config['bootloader'].get('global_dep_install', False) else ''
+
+        if not binary:
+            if sys.platform == 'win32':
+                binary = 'py -3'
+            else:
+                binary = 'python3'
+
+        msg = await ctx.send(f'{self.bot.ui_emojis.loading} Fixing...')
+        code = await self.bot.loop.run_in_executor(
+            None, lambda: os.system(
+                f'{binary} -m pip install{user_option} --force https://github.com/greeeen-dev/revolt.py'
+            )
+        )
+
+        if code > 0:
+            await msg.edit(content=f'{self.bot.ui_emojis.error} Could not install the patched version.')
+        else:
+            await msg.edit(content=f'{self.bot.ui_emojis.success} Installed patch version! Please reboot the bot.')
 
 def setup(bot):
     bot.add_cog(Revolt(bot))
