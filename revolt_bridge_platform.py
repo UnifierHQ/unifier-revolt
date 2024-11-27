@@ -36,15 +36,20 @@ class Embed(revolt.SendableEmbed):
         self.fields = []
         self.raw_description = kwargs.get('description', None)
         self.raw_colour = kwargs.get('color', None) or kwargs.get('colour', None)
+        self.footer = None
 
     @property
     def description(self):
         if self.fields:
-            return (
+            toreturn = (
                 (self.raw_description + '\n\n') if self.raw_description else ''
-            )+ '\n\n'.join([f'**{field.name}**\n{field.value}' for field in self.fields])
+            ) + '\n\n'.join([f'**{field.name}**\n{field.value}' for field in self.fields])
         else:
-            return self.raw_description
+            toreturn = self.raw_description
+        if self.footer:
+            footer_text = "\n".join([f'##### {line}' for line in self.footer.split('\n')])
+            toreturn = f'{toreturn}\n\n{footer_text}'
+        return toreturn
 
     @description.setter
     def description(self, value):
@@ -75,6 +80,9 @@ class Embed(revolt.SendableEmbed):
 
     def set_field_at(self, index, name, value):
         self.fields[index] = EmbedField(name, value)
+
+    def set_footer(self, text):
+        self.footer = text
 
 class RevoltPlatform(platform_base.PlatformBase):
     def __init__(self, *args, **kwargs):
@@ -194,6 +202,10 @@ class RevoltPlatform(platform_base.PlatformBase):
 
             for field in embeds[i].fields:
                 embed.add_field(field.name, field.value)
+
+            if embeds[i].footer:
+                embed.set_footer(text=embeds[i].footer.text)
+
             converted.append(embed)
         return converted
 
@@ -207,6 +219,10 @@ class RevoltPlatform(platform_base.PlatformBase):
                 # colour=embeds[i].colour.value (do this later)
             )
             embed.set_thumbnail(url=embeds[i].icon_url)
+
+            if embeds[i].footer:
+                embed.set_footer(text=embeds[i].footer)
+
             converted.append(embed)
         return converted
 
