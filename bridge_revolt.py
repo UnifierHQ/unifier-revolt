@@ -1501,10 +1501,31 @@ class Revolt(commands.Cog,name='Revolt Support'):
             if not ctx.author.id in self.bot.admins:
                 return await ctx.send('You do not have the permissions to run this command.')
             userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
-            user = self.get_user(userid)
+            try:
+                user = self.get_user(userid)
+            except:
+                user = None
             if not user:
+                embed = Embed(
+                    title=f'{self.user.display_name or self.user.name} help',
+                    color=self.bot.colors.unifier
+                )
+                cmdname = "addmod"
+                command_focus = self.bot.get_command(cmdname)
+
+                embed.title += f' / {cmdname}'
+                embed.description = (
+                    f'# `{self.bot.command_prefix}{cmdname}`\n'+
+                    f'{getattr(command_focus, "description", "No description provided")}'
+                )
+                if command_focus.aliases:
+                    embed.add_field(
+                        name='Aliases',
+                        value='\n'.join([f'`{self.bot.command_prefix}{alias}`' for alias in command_focus.aliases])
+                    )
+                embed.add_field(name='Usage', value=f'`{self.bot.command_prefix}addmod`')
                 return await ctx.send(
-                    'This is not a valid user. You can either @ping to select a user **or** use their user ID.')
+                    ':x: `user` is a required argument and must be valid.', embed=embed)
             if userid in self.bot.db['moderators']:
                 return await ctx.send('This user is already a moderator.')
             if userid in self.bot.admins or user.bot:
