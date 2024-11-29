@@ -2,8 +2,8 @@
   "id": "revolt",
   "name": "Revolt Support",
   "description": "Unifier Revolt Support extension",
-  "version": "v1.3.10",
-  "release": 40,
+  "version": "v1.3.11",
+  "release": 41,
   "minimum": 58,
   "services": [
     "bridge_platform"
@@ -11,7 +11,7 @@
   "bridge_platform": "revolt",
   "shutdown": true,
   "requirements": [
-    "https://github.com/greeeen-dev/revolt.py/archive/refs/heads/master.zip",
+    "https://github.com/revoltchat/revolt.py/archive/refs/heads/master.zip",
     "ulid-py",
     "typing-extensions",
     "aenum"
@@ -23,13 +23,6 @@
       "repo": "https://github.com/revoltchat/revolt.py",
       "license": "MIT",
       "license_url": "https://github.com/revoltchat/revolt.py/blob/master/LICENSE"
-    },
-    "revolt.py (patched)": {
-      "author": "greeeen-dev",
-      "description": "Python wrapper for https://revolt.chat",
-      "repo": "https://github.com/greeeen-dev/revolt.py",
-      "license": "MIT",
-      "license_url": "https://github.com/greeeen-dev/revolt.py/blob/master/LICENSE"
     },
     "ulid-py": {
       "author": "Andrew Hawker",
