@@ -312,6 +312,17 @@ class RevoltPlatform(platform_base.PlatformBase):
             text = text.replace(f'<a:{emojiname}:{emojiafter}', f':{emojiname}\\:')
             offset += 1
 
+        components = text.split('\n')
+        newlines = []
+        for line in components:
+            if line.startswith('##### '):
+                line = line.replace('##### ', '-# ', 1)
+            elif line.startswith('#### '):
+                line = line.replace('#### ', '**', 1) + '**'
+            newlines.append(line)
+
+        text = '\n'.join(newlines)
+
         return text
 
     async def to_discord_file(self, file):
