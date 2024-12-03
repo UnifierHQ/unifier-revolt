@@ -55,7 +55,6 @@ import revolt
 import traceback
 import time
 from utils import log, restrictions_legacy as r_legacy
-import hashlib
 import random
 import string
 import os
