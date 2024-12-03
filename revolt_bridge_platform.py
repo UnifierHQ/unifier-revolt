@@ -347,6 +347,7 @@ class RevoltPlatform(platform_base.PlatformBase):
         else:
             reply_id = None
             reply = special.get('reply', None)
+            source = special.get('source', 'discord')
 
             if reply:
                 if type(reply) is revolt.Message:
@@ -380,6 +381,14 @@ class RevoltPlatform(platform_base.PlatformBase):
                         reply_msg = await channel.fetch_message(reply_id)
                     except:
                         pass
+
+            if source == 'discord':
+                newlines = []
+                for line in content.split('\n'):
+                    if line.startswith('-# '):
+                        line = line.replace('-# ', '##### ', 1)
+                    newlines.append(line)
+                content = '\n'.join(newlines)
 
             msg = await channel.send(
                 content,
