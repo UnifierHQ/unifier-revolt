@@ -315,8 +315,9 @@ class RevoltPlatform(platform_base.PlatformBase):
         components = text.split('\n')
         newlines = []
         for line in components:
-            if line.startswith('##### '):
-                line = line.replace('##### ', '-# ', 1)
+            if line.startswith('##### ') or line.startswith('###### '):
+                tags = line.split(' ', 1)[0]
+                line = line.replace(f'{tags} ', '-# ', 1)
             elif line.startswith('#### '):
                 line = line.replace('#### ', '**', 1) + '**'
             newlines.append(line)
