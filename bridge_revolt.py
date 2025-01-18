@@ -73,6 +73,7 @@ except:
 restrictions_legacy = r_legacy.Restrictions()
 
 mentions = nextcord.AllowedMentions(everyone=False, roles=False, users=False)
+tokenstore = None
 
 def timetoint(t):
     try:
@@ -204,7 +205,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
     """An extension that enables Unifier to run on Revolt. Manages the Revolt instance, as well as Revolt-to-Revolt and Revolt-to-external bridging.
 
     Developed by Green"""
-    def __init__(self, bot, tokenstore=None):
+    def __init__(self, bot):
         self.bot = bot
         if not 'revolt' in self.bot.config.get('external', ['revolt']):
             # revolt is intentionally lowercase
@@ -214,7 +215,6 @@ class Revolt(commands.Cog,name='Revolt Support'):
             self.bot.revolt_session = None
             self.bot.revolt_client_task = asyncio.create_task(self.revolt_boot())
         self.logger = log.buildlogger(self.bot.package, 'revolt.core', self.bot.loglevel)
-        self.__tokenstore = tokenstore
         restrictions_legacy.attach_bot(self.bot)
 
     def db(self):
@@ -1850,12 +1850,14 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 async with aiohttp.ClientSession() as session:
                     self.bot.revolt_session = session
 
-                    if self.__tokenstore:
+                    if tokenstore:
                         # v3.8.0 and above w/ restrictive tokenstore
-                        self.bot.revolt_client = self.Client(session, self.__tokenstore.retrieve('TOKEN_REVOLT'), help_command=None)
+                        # noinspection PyUnresolvedReferences
+                        self.bot.revolt_client = self.Client(session, tokenstore.retrieve('TOKEN_REVOLT'), help_command=None)
                     elif hasattr(self.bot, 'tokenstore'):
                         # v3.2.0 and above w/ normal tokenstore
-                        self.bot.revolt_client = self.Client(session, self.bot.tokenstore.retrieve('TOKEN_REVOLT'), help_command=None)
+                        # noinspection PyUnresolvedReferences
+                        self.bot.revolt_client = self.Client(session, tokenstore.retrieve('TOKEN_REVOLT'), help_command=None)
                     else:
                         # older versions w/o token encryption
                         self.bot.revolt_client = self.Client(session, os.environ.get('TOKEN_REVOLT'), help_command=None)
@@ -1941,5 +1943,6 @@ class Revolt(commands.Cog,name='Revolt Support'):
         else:
             await msg.edit(content=f'{self.bot.ui_emojis.success} Installed patch version! Please reboot the bot.')
 
-def setup(bot):
+def setup(bot, tokenstore=None):
+    tokenstore = tokenstore
     bot.add_cog(Revolt(bot))
