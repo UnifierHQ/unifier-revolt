@@ -56,6 +56,9 @@
   "required_tokens": [
     "TOKEN_REVOLT"
   ],
+  "required_tokens_protected": [
+    "TOKEN_REVOLT"
+  ],
   "uses_tokenstore": [
     "bridge_revolt.py"
   ],
