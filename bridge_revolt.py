@@ -73,7 +73,7 @@ except:
 restrictions_legacy = r_legacy.Restrictions()
 
 mentions = nextcord.AllowedMentions(everyone=False, roles=False, users=False)
-tokenstore = None
+cog_tokenstore = None
 
 def timetoint(t):
     try:
@@ -1850,14 +1850,14 @@ class Revolt(commands.Cog,name='Revolt Support'):
                 async with aiohttp.ClientSession() as session:
                     self.bot.revolt_session = session
 
-                    if tokenstore:
+                    if cog_tokenstore:
                         # v3.8.0 and above w/ restrictive tokenstore
                         # noinspection PyUnresolvedReferences
-                        self.bot.revolt_client = self.Client(session, tokenstore.retrieve('TOKEN_REVOLT'), help_command=None)
+                        self.bot.revolt_client = self.Client(session, cog_tokenstore.retrieve('TOKEN_REVOLT'), help_command=None)
                     elif hasattr(self.bot, 'tokenstore'):
                         # v3.2.0 and above w/ normal tokenstore
                         # noinspection PyUnresolvedReferences
-                        self.bot.revolt_client = self.Client(session, tokenstore.retrieve('TOKEN_REVOLT'), help_command=None)
+                        self.bot.revolt_client = self.Client(session, self.bot.tokenstore.retrieve('TOKEN_REVOLT'), help_command=None)
                     else:
                         # older versions w/o token encryption
                         self.bot.revolt_client = self.Client(session, os.environ.get('TOKEN_REVOLT'), help_command=None)
@@ -1944,5 +1944,6 @@ class Revolt(commands.Cog,name='Revolt Support'):
             await msg.edit(content=f'{self.bot.ui_emojis.success} Installed patch version! Please reboot the bot.')
 
 def setup(bot, tokenstore=None):
-    tokenstore = tokenstore
+    global cog_tokenstore
+    cog_tokenstore = tokenstore
     bot.add_cog(Revolt(bot))
