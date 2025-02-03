@@ -151,16 +151,33 @@ class RevoltPlatform(platform_base.PlatformBase):
     def get_id(self, obj):
         return obj.id
 
-    def display_name(self, user):
+    def display_name(self, user, message=None):
+        if message:
+            if not message.author.id == user.id:
+                # mismatch
+                return None
+            return message.author.masquerade_name or user.display_name or user.name
         return user.display_name or user.name
 
-    def user_name(self, user):
+    def user_name(self, user, message=None):
+        if message:
+            if not message.author.id == user.id:
+                # mismatch
+                return None
+            return message.author.masquerade_name or user.display_name or user.name
         return user.name
 
     def name(self, obj):
         return obj.name
 
-    def avatar(self, user):
+    def avatar(self, user, message=None):
+        if message:
+            if not message.author.id == user.id:
+                # mismatch
+                return None
+            return message.author.masquerade_avatar.url if message.author.masquerade_avatar else (
+                user.avatar.url if user.avatar else None
+            )
         return user.avatar.url if user.avatar else None
 
     def permissions(self, user, channel=None):
