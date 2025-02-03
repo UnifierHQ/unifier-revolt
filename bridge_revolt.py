@@ -1161,6 +1161,57 @@ class Revolt(commands.Cog,name='Revolt Support'):
             self.bot.db.save_data()
             await ctx.send('Nickname updated.')
 
+        @bridge.command()
+        async def pause(self, ctx):
+            paused = f'{ctx.author.id}' in self.bot.db['paused']
+
+            embed = Embed(
+                title=':warning: Pause your messages from bridging?',
+                description=(
+                    f'This will stop your messages from being bridged on all {self.user.name} rooms. This can be '+
+                    'helpful if you use proxies to chat, like Tupperbox and PluralKit.\n'+
+                    'You can unpause your messages at any time using the same command.'
+                ),
+                color=self.bot.colors.warning
+            )
+
+            if paused:
+                embed.title = ':warning: Continue bridging your messages?',
+                embed.description = f'This will allow {self.user.name} to bridge your messages again.'
+
+            msg = await ctx.send(embed=embed, interactions=revolt.MessageInteractions(
+                reactions=['\U00002705', '\U0000274C'], restrict_reactions=True
+            ))
+
+            def check(message, user, _emoji_id):
+                return message.id == msg.id and user.id == ctx.author.id
+
+            try:
+                _message, _user, emoji_id = await self.wait_for('reaction_add', check=check, timeout=60)
+            except asyncio.TimeoutError:
+                return await msg.edit(content='Interaction has expired.')
+
+            if emoji_id == '\U0000274C':
+                return await msg.edit(content='Interaction was canceled.')
+
+            embed = Embed(
+                title=':white_check_mark: Bridging paused',
+                description='Your messages will no longer be bridged.',
+                color=self.bot.colors.success
+            )
+
+            if not paused:
+                self.bot.db['paused'].append(f'{ctx.user.id}')
+                self.bot.db.save_data()
+            else:
+                self.bot.db['paused'].remove(f'{ctx.user.id}')
+                self.bot.db.save_data()
+                embed.title = ':white_check_mark: Bridging resumed'
+                embed.description = 'Your messages will now be bridged again.'
+
+            embed.colour = self.bot.colors.success
+            await msg.edit(embed=embed)
+
         @config.command()
         async def invites(self, ctx, room):
             if self.compatibility_mode:
