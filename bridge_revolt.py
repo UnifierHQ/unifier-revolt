@@ -1912,7 +1912,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
                 if time.time() < cooldown:
                     await ctx.send(
-                        f'You\'re changing pages too fast. Try again in {round(cooldown - time.time())} seconds.',
+                        f'<@{ctx.author.id}> You\'re changing pages too fast. Try again in {round(cooldown - time.time())} seconds.',
                         replies=[revolt.MessageReply(msg)]
                     )
                     skip_edit = True
