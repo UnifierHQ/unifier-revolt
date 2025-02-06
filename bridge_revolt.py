@@ -641,6 +641,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @bridge.command(name='create-room', aliases=['make'])
         async def create_room(self,ctx,*,room=None):
+            """Creates a new room."""
+
             force_private = False
             if not ctx.author.id in self.bot.admins:
                 if self.compatibility_mode or not self.bot.config['enable_private_rooms']:                    
@@ -719,8 +721,10 @@ class Revolt(commands.Cog,name='Revolt Support'):
             else:
                 await ctx.send(f'Created room `{room}`!')
 
-        @rv_commands.command()
+        @rv_commands.command(name='add-rule', aliases=['addrule'])
         async def addrule(self, ctx, room, *, rule):
+            """Adds a rule to a given room."""
+
             if not ctx.author.id in self.bot.admins:
                 return await ctx.send('You do not have the permissions to run this command.')
             room = room.lower()
@@ -741,8 +745,10 @@ class Revolt(commands.Cog,name='Revolt Support'):
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send('Added rule!')
 
-        @rv_commands.command()
+        @rv_commands.command(name='delete-rule', aliases=['delrule'])
         async def delrule(self, ctx, room, *, rule):
+            """Removes a given rule from a given room."""
+
             if not ctx.author.id in self.bot.admins:
                 return await ctx.send('You do not have the permissions to run this command.')
             room = room.lower()
@@ -765,6 +771,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @rv_commands.command()
         async def roomrestrict(self, ctx, room):
+            """Restricts/unrestricts a room. Only admins will be able to connect to this room when restricted."""
+
             if not ctx.author.id in self.bot.admins:
                 return await ctx.send('You do not have the permissions to run this command.')
             room = room.lower()
@@ -791,6 +799,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @rv_commands.command()
         async def roomlock(self, ctx, room):
+            """Locks/unlocks a room. Only moderators and admins will be able to chat in this room when locked."""
+
             if not ctx.author.id in self.bot.admins:
                 return await ctx.send('You do not have the permissions to run this command.')
             room = room.lower()
@@ -816,6 +826,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @rv_commands.command()
         async def rename(self, ctx, room, newroom):
+            """Renames a room."""
+
             if not ctx.author.id in self.bot.admins:
                 return await ctx.send('You do not have the permissions to run this command.')
             newroom = newroom.lower()
@@ -847,6 +859,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @bridge.command(aliases=['connect','link'])
         async def bind(self,ctx,*,room):
+            """Connects the channel to a given room."""
+
             if not ctx.author.get_permissions().manage_channel and not ctx.author.id in self.bot.admins:
                 return await ctx.send('You don\'t have the necessary permissions.')
 
@@ -972,6 +986,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @bridge.command(aliases=['unlink', 'disconnect'])
         async def unbind(self, ctx, *, room=None):
+            """Disconnects the server from a given room."""
+
             if not room:
                 # room autodetect
                 if not self.compatibility_mode:
@@ -995,6 +1011,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @bridge.command()
         async def disband(self, ctx, room):
+            """Disbands a room."""
+
             if self.compatibility_mode:
                 return await ctx.send('You need Unifier v3 to use this command.')
 
@@ -1028,6 +1046,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @bridge.command()
         async def avatar(self, ctx, *, url=''):
+            """Displays or sets custom avatar."""
+
             desc = f'You have no avatar! Run `{self.bot.command_prefix}avatar <url>` or set an avatar in your profile settings.'
             try:
                 if f'{ctx.author.id}' in list(self.bot.db['avatars'].keys()):
@@ -1059,6 +1079,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @bridge.command()
         async def allocations(self, ctx):
+            """Shows your server's Private Rooms creation and connection allocations."""
+
             if not self.bot.config['enable_private_rooms']:
                 return await ctx.send('Private rooms are disabled.')
 
@@ -1106,14 +1128,20 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @bridge.command()
         async def rooms(self, ctx, index='1'):
+            """Shows a list of rooms."""
+
             await self.roomlist(ctx, index)
 
         @bridge.command(name='private-rooms')
         async def private_rooms(self, ctx, index='1'):
+            """Shows a list of Private Rooms your server can access."""
+
             await self.roomlist(ctx, index, private=True)
 
         @bridge.command(aliases=['colour'])
         async def color(self, ctx, *, color=''):
+            """Sets or shows your user color."""
+
             if color == '':
                 try:
                     current_color = self.bot.db['colors'][f'{ctx.author.id}']
@@ -1163,6 +1191,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @bridge.command()
         async def pause(self, ctx):
+            """Sets a nickname. An empty provided nickname will reset it."""
+
             paused = f'{ctx.author.id}' in self.bot.db['paused']
 
             embed = Embed(
@@ -1214,6 +1244,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @config.command()
         async def invites(self, ctx, room):
+            """Views your room's invites."""
+
             if self.compatibility_mode:
                 return await ctx.send('You need Unifier v3 to use this command.')
 
@@ -1257,6 +1289,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @config.command(name='create-invite')
         async def create_invite(self, ctx, room, expiry='7d', max_usage='0'):
+            """Creates an invite."""
+
             if self.compatibility_mode:
                 return await ctx.send('You need Unifier v3 to use this command.')
 
@@ -1303,6 +1337,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @config.command(name='delete-invite')
         async def delete_invite(self, ctx, invite):
+            """Deletes an invite."""
+
             if self.compatibility_mode:
                 return await ctx.send('You need Unifier v3 to use this command.')
 
@@ -1373,6 +1409,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @moderation.command()
         async def block(self, ctx, *, target):
+            """Blocks a user or server from bridging messages to your server."""
+
             if not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members:
                 return await ctx.send('You cannot restrict members/servers.')
             try:
@@ -1401,6 +1439,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @moderation.command(aliases=['unban'])
         async def unblock(self, ctx, *, target):
+            """Unblocks a user or server from bridging messages through Unifier."""
+
             if not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members:
                 return await ctx.send('You cannot unrestrict members/servers.')
             try:
@@ -1482,7 +1522,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
                 if time.time() < cooldown:
                     await ctx.send(
-                        f'You\'re changing pages too fast. Try again in {round(cooldown - time.time())} seconds.',
+                        f'<@{ctx.author.id}> You\'re changing pages too fast. Try again in {round(cooldown - time.time())} seconds.',
                         replies=[revolt.MessageReply(msg)]
                     )
                     skip_edit = True
@@ -1552,6 +1592,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @rv_commands.command()
         async def addmod(self, ctx, *, userid):
+            """Adds a moderator to the instance."""
             if not ctx.author.id in self.bot.admins:
                 return await ctx.send('You do not have the permissions to run this command.')
             userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
@@ -1588,8 +1629,9 @@ class Revolt(commands.Cog,name='Revolt Support'):
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send(f'**{user.name}#{user.discriminator}** is now a moderator!')
 
-        @rv_commands.command(aliases=['remmod', 'delmod'])
+        @rv_commands.command(aliases=['remmod', 'delmod', 'removemod'])
         async def delmod(self, ctx, *, userid):
+            """Removes a moderator from the instance."""
             if not ctx.author.id in self.bot.admins:
                 return await ctx.send('You do not have the permissions to run this command.')
             userid = userid.replace('<@', '', 1).replace('!', '', 1).replace('>', '', 1)
@@ -1607,6 +1649,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @rv_commands.command()
         async def about(self,ctx):
+            """Shows bot info."""
             with open('plugins/revolt.json') as file:
                 pluginfo = json.load(file)
 
@@ -1682,6 +1725,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @rv_commands.command()
         async def help(self, ctx, *, query: Optional[str] = None):
+            """Shows a list of all commands."""
             search = False
             page = False
             search_query = ''
