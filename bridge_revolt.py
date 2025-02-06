@@ -1180,6 +1180,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @bridge.command()
         async def nickname(self, ctx, *, nickname=''):
+            """Sets a nickname. An empty provided nickname will reset it."""
+
             if len(nickname) > 30:
                 return await ctx.send('Please keep your nickname within 30 characters.')
             if len(nickname) == 0:
@@ -1543,6 +1545,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
         @moderation.command(aliases=['find'])
         async def identify(self, ctx):
+            """Identifies the origin of a message."""
+
             if (not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members and
                     not ctx.author.id in self.bot.moderators):
                 return
