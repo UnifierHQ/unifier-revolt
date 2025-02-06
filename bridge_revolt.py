@@ -1964,7 +1964,22 @@ class Revolt(commands.Cog,name='Revolt Support'):
     @commands.command(name='fix-revolt', hidden=True)
     @restrictions_legacy.owner()
     async def fix_revolt(self, ctx):
-        """Fixes Revolt permissions check bug by switching to a patched version. You only need to run this once."""
+        """Revolt.py has been fixed, there's no reason to use this."""
+        embed = nextcord.Embed(
+            title='Revolt.py has been fixed!',
+            description=(
+                'Our [pull request](https://github.com/revoltchat/revolt.py/pull/89) was merged to the main '+
+                'repository, meaning you don\'t need to use our patched version anymore.\n\n'+
+                f'To switch back to the upstream version, run `{self.bot.command_prefix}rollback-revolt`.'
+            ),
+            color=self.bot.colors.success
+        )
+        await ctx.send(embed=embed)
+
+    @commands.command(name='rollback-revolt', hidden=True)
+    @restrictions_legacy.owner()
+    async def rollback_revolt(self, ctx):
+        """Switches back to using the upstream version of Revolt.py."""
         with open('boot_config.json') as file:
             boot_config = json.load(file)
 
@@ -1977,7 +1992,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             else:
                 binary = 'python3'
 
-        msg = await ctx.send(f'{self.bot.ui_emojis.loading} Fixing...')
+        msg = await ctx.send(f'{self.bot.ui_emojis.loading} Reverting...')
 
         # Attempt to purge cache, it's ok if this fails
         await self.bot.loop.run_in_executor(None, lambda: os.system(f'{binary} -m pip cache purge'))
@@ -1985,14 +2000,14 @@ class Revolt(commands.Cog,name='Revolt Support'):
         # Attempt to install
         code = await self.bot.loop.run_in_executor(
             None, lambda: os.system(
-                f'{binary} -m pip install{user_option} --force https://github.com/greeeen-dev/revolt.py/archive/refs/heads/master.zip'
+                f'{binary} -m pip install{user_option} --force https://github.com/revoltchat/revolt.py/archive/refs/heads/master.zip'
             )
         )
 
         if code > 0:
-            await msg.edit(content=f'{self.bot.ui_emojis.error} Could not install the patched version.')
+            await msg.edit(content=f'{self.bot.ui_emojis.error} Could not install the main version.')
         else:
-            await msg.edit(content=f'{self.bot.ui_emojis.success} Installed patch version! Please reboot the bot.')
+            await msg.edit(content=f'{self.bot.ui_emojis.success} Installed main version! Please reboot the bot.')
 
 def setup(bot, tokenstore=None):
     global cog_tokenstore
