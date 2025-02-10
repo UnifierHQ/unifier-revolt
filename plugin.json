@@ -8,7 +8,6 @@
   "services": [
     "bridge_platform"
   ],
-  "repository": "https://github.com/UnifierHQ/unifier-revolt",
   "bridge_platform": "revolt",
   "shutdown": true,
   "requirements": [
