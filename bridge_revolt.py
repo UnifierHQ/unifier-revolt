@@ -1825,7 +1825,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                             canrun = False
 
                         if not canrun or not found:
-                            await ctx.send('Invalid command. Use `search:command` to look up commands.')
+                            return await ctx.send('Invalid command. Use `search:command` to look up commands.')
 
                 if command_focus:
                     cmdname = (
