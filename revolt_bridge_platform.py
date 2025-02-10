@@ -36,15 +36,20 @@ class Embed(revolt.SendableEmbed):
         self.fields = []
         self.raw_description = kwargs.get('description', None)
         self.raw_colour = kwargs.get('color', None) or kwargs.get('colour', None)
+        self.footer = None
 
     @property
     def description(self):
         if self.fields:
-            return (
+            toreturn = (
                 (self.raw_description + '\n\n') if self.raw_description else ''
-            )+ '\n\n'.join([f'**{field.name}**\n{field.value}' for field in self.fields])
+            ) + '\n\n'.join([f'**{field.name}**\n{field.value}' for field in self.fields])
         else:
-            return self.raw_description
+            toreturn = self.raw_description
+        if self.footer:
+            footer_text = "\n".join([f'##### {line}' for line in self.footer.split('\n')])
+            toreturn = f'{toreturn}\n\n{footer_text}'
+        return toreturn
 
     @description.setter
     def description(self, value):
@@ -75,6 +80,9 @@ class Embed(revolt.SendableEmbed):
 
     def set_field_at(self, index, name, value):
         self.fields[index] = EmbedField(name, value)
+
+    def set_footer(self, text):
+        self.footer = text
 
 class RevoltPlatform(platform_base.PlatformBase):
     def __init__(self, *args, **kwargs):
@@ -143,16 +151,33 @@ class RevoltPlatform(platform_base.PlatformBase):
     def get_id(self, obj):
         return obj.id
 
-    def display_name(self, user):
+    def display_name(self, user, message=None):
+        if message:
+            if not message.author.id == user.id:
+                # mismatch
+                return None
+            return message.author.masquerade_name or user.display_name or user.name
         return user.display_name or user.name
 
-    def user_name(self, user):
+    def user_name(self, user, message=None):
+        if message:
+            if not message.author.id == user.id:
+                # mismatch
+                return None
+            return message.author.masquerade_name or user.display_name or user.name
         return user.name
 
     def name(self, obj):
         return obj.name
 
-    def avatar(self, user):
+    def avatar(self, user, message=None):
+        if message:
+            if not message.author.id == user.id:
+                # mismatch
+                return None
+            return message.author.masquerade_avatar.url if message.author.masquerade_avatar else (
+                user.avatar.url if user.avatar else None
+            )
         return user.avatar.url if user.avatar else None
 
     def permissions(self, user, channel=None):
@@ -194,6 +219,10 @@ class RevoltPlatform(platform_base.PlatformBase):
 
             for field in embeds[i].fields:
                 embed.add_field(field.name, field.value)
+
+            if embeds[i].footer:
+                embed.set_footer(text=embeds[i].footer.text)
+
             converted.append(embed)
         return converted
 
@@ -207,6 +236,10 @@ class RevoltPlatform(platform_base.PlatformBase):
                 # colour=embeds[i].colour.value (do this later)
             )
             embed.set_thumbnail(url=embeds[i].icon_url)
+
+            if embeds[i].footer:
+                embed.set_footer(text=embeds[i].footer)
+
             converted.append(embed)
         return converted
 
@@ -296,6 +329,18 @@ class RevoltPlatform(platform_base.PlatformBase):
             text = text.replace(f'<a:{emojiname}:{emojiafter}', f':{emojiname}\\:')
             offset += 1
 
+        components = text.split('\n')
+        newlines = []
+        for line in components:
+            if line.startswith('##### ') or line.startswith('###### '):
+                tags = line.split(' ', 1)[0]
+                line = line.replace(f'{tags} ', '-# ', 1)
+            elif line.startswith('#### '):
+                line = line.replace('#### ', '**', 1) + '**'
+            newlines.append(line)
+
+        text = '\n'.join(newlines)
+
         return text
 
     async def to_discord_file(self, file):
@@ -347,6 +392,7 @@ class RevoltPlatform(platform_base.PlatformBase):
         else:
             reply_id = None
             reply = special.get('reply', None)
+            source = special.get('source', 'discord')
 
             if reply:
                 if type(reply) is revolt.Message:
@@ -380,6 +426,14 @@ class RevoltPlatform(platform_base.PlatformBase):
                         reply_msg = await channel.fetch_message(reply_id)
                     except:
                         pass
+
+            if source == 'discord':
+                newlines = []
+                for line in content.split('\n'):
+                    if line.startswith('-# '):
+                        line = line.replace('-# ', '##### ', 1)
+                    newlines.append(line)
+                content = '\n'.join(newlines)
 
             msg = await channel.send(
                 content,

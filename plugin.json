@@ -2,8 +2,8 @@
   "id": "revolt",
   "name": "Revolt Support",
   "description": "Unifier Revolt Support extension",
-  "version": "v1.3.11",
-  "release": 41,
+  "version": "v1.4.0",
+  "release": 42,
   "minimum": 58,
   "services": [
     "bridge_platform"
@@ -46,6 +46,15 @@
       "license_url": "https://github.com/ethanfurman/aenum/blob/master/aenum/LICENSE"
     }
   },
+  "required_tokens": [
+    "TOKEN_REVOLT"
+  ],
+  "required_tokens_protected": [
+    "TOKEN_REVOLT"
+  ],
+  "uses_tokenstore": [
+    "bridge_revolt.py"
+  ],
   "modules": [
     "bridge_revolt.py"
   ],
