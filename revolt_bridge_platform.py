@@ -237,9 +237,6 @@ class RevoltPlatform(platform_base.PlatformBase):
             )
             embed.set_thumbnail(url=embeds[i].icon_url)
 
-            if embeds[i].footer:
-                embed.set_footer(text=embeds[i].footer)
-
             converted.append(embed)
         return converted
 
