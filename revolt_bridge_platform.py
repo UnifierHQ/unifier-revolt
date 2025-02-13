@@ -432,13 +432,24 @@ class RevoltPlatform(platform_base.PlatformBase):
                     newlines.append(line)
                 content = '\n'.join(newlines)
 
-            msg = await channel.send(
-                content,
-                embeds=special['embeds'] if 'embeds' in special.keys() else None,
-                attachments=special['files'] if 'files' in special.keys() else None,
-                reply=revolt.MessageReply(reply_msg) if reply_id else None,
-                masquerade=persona
-            )
+            try:
+                msg = await channel.send(
+                    content,
+                    embeds=special['embeds'] if 'embeds' in special.keys() else None,
+                    attachments=special['files'] if 'files' in special.keys() else None,
+                    reply=revolt.MessageReply(reply_msg) if reply_id else None,
+                    masquerade=persona
+                )
+            except Exception as e:
+                if str(e) == 'Expected object or value':
+                    msg = await channel.send(
+                        content,
+                        embeds=special['embeds'] if 'embeds' in special.keys() else None,
+                        reply=revolt.MessageReply(reply_msg) if reply_id else None,
+                        masquerade=persona
+                    )
+                else:
+                    raise
         return msg
 
     async def edit(self, message, content, special: dict = None):
