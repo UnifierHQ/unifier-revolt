@@ -250,6 +250,7 @@ class RevoltPlatform(platform_base.PlatformBase):
         return await channel.fetch_message(message_id)
 
     async def make_friendly(self, text):
+        # Convert emojis to a URL, if there's only one emoji in the message
         if text.startswith(':') and text.endswith(':'):
             try:
                 emoji_id = text.replace(':', '', 1)[:-1]
@@ -258,6 +259,7 @@ class RevoltPlatform(platform_base.PlatformBase):
             except:
                 pass
 
+        # Convert pings to regular text
         components = text.split('<@')
         offset = 0
         if text.startswith('<@'):
@@ -277,6 +279,7 @@ class RevoltPlatform(platform_base.PlatformBase):
                 f'<@!{userid}>', f'@{display_name or user.name}')
             offset += 1
 
+        # Convert channels to regular text
         components = text.split('<#')
         offset = 0
         if text.startswith('<#'):
@@ -300,6 +303,7 @@ class RevoltPlatform(platform_base.PlatformBase):
                 f'<#!{channelid}>', f'#{channel.name}')
             offset += 1
 
+        # Convert emojis to regular text
         components = text.split('<:')
         offset = 0
         if text.startswith('<:'):
@@ -313,6 +317,7 @@ class RevoltPlatform(platform_base.PlatformBase):
             text = text.replace(f'<:{emojiname}:{emojiafter}', f':{emojiname}\\:')
             offset += 1
 
+        # Convert animated emojis to regular text
         components = text.split('<a:')
         offset = 0
         if text.startswith('<a:'):
@@ -326,6 +331,7 @@ class RevoltPlatform(platform_base.PlatformBase):
             text = text.replace(f'<a:{emojiname}:{emojiafter}', f':{emojiname}\\:')
             offset += 1
 
+        # Convert subtext to Revolt format
         components = text.split('\n')
         newlines = []
         for line in components:
@@ -337,6 +343,11 @@ class RevoltPlatform(platform_base.PlatformBase):
             newlines.append(line)
 
         text = '\n'.join(newlines)
+
+        # Convert spoilers to Discord format
+        components = text.split('!!')
+        to_replace = (len(components) - 1) - ((len(components) - 1) % 2)
+        text = text.replace('!!', '||', to_replace)
 
         return text
 
@@ -431,6 +442,11 @@ class RevoltPlatform(platform_base.PlatformBase):
                         line = line.replace('-# ', '##### ', 1)
                     newlines.append(line)
                 content = '\n'.join(newlines)
+
+                # Convert spoilers to Revolt format
+                components = content.split('||')
+                to_replace = (len(components) - 1) - ((len(components) - 1) % 2)
+                content = content.replace('||', '!!', to_replace)
 
             try:
                 msg = await channel.send(
