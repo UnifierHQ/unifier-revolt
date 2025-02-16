@@ -152,10 +152,7 @@ class RevoltPlatform(platform_base.PlatformBase):
         return obj.id
 
     def display_name(self, user, message=None):
-        if message:
-            if not message.author.id == user.id:
-                # mismatch
-                return None
+        if message and message.author.id == user.id:
             return message.author.masquerade_name or user.display_name or user.name
         return user.display_name or user.name
 
