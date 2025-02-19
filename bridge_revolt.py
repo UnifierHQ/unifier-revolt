@@ -462,29 +462,44 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     self.bot.bridge.msg_stats.update({roomname: 1})
                 if self.compatibility_mode:
                     tasks.append(self.bot.loop.create_task(
-                        self.bot.bridge.send(room=roomname, message=message, platform='revolt',
-                                             extbridge=False)
+                        self.bot.bridge.send(
+                            room=roomname, message=message, platform='revolt', extbridge=False
+                        )
                     ))
                 else:
-                    tasks.append(self.bot.loop.create_task(
-                        self.bot.bridge.send(room=roomname, message=message, source='revolt', platform='revolt',
-                                             extbridge=False)
-                    ))
+                    try:
+                        tasks.append(self.bot.loop.create_task(
+                            self.bot.bridge.send(
+                                room=roomname, message=message, source='revolt', platform='revolt', extbridge=False,
+                                is_first=True
+                            )
+                        ))
+                    except:
+                        tasks.append(self.bot.loop.create_task(
+                            self.bot.bridge.send(
+                                room=roomname, message=message, source='revolt', platform='revolt', extbridge=False
+                            )
+                        ))
             else:
                 if self.compatibility_mode:
-                    parent_id = await self.bot.bridge.send(room=roomname, message=message,
-                                                           platform='revolt',
-                                                           extbridge=False)
+                    parent_id = await self.bot.bridge.send(
+                        room=roomname, message=message, platform='revolt', extbridge=False
+                    )
                 else:
-                    parent_id = await self.bot.bridge.send(room=roomname, message=message, source='revolt',
-                                                           platform='revolt',
-                                                           extbridge=False)
+                    try:
+                        parent_id = await self.bot.bridge.send(
+                            room=roomname, message=message, source='revolt', platform='revolt', extbridge=False,
+                            is_first=True
+                        )
+                    except:
+                        parent_id = await self.bot.bridge.send(
+                            room=roomname, message=message, source='revolt', platform='revolt', extbridge=False
+                        )
 
             if should_resend and parent_id == message.id:
                 if self.compatibility_mode:
                     tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
-                        room=roomname, message=message, platform='discord', extbridge=False,
-                        id_override=parent_id
+                        room=roomname, message=message, platform='discord', extbridge=False, id_override=parent_id
                     )))
                 else:
                     tasks.append(self.bot.loop.create_task(self.bot.bridge.send(
@@ -581,7 +596,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
             msgdata = await self.bot.bridge.fetch_message(message.id)
 
-            await self.bot.bridge.edit(msgdata.id,message.content)
+            await self.bot.bridge.edit(msgdata.id, message.content, source='revolt')
 
         async def on_message_delete(self, message):
             roomname = None
