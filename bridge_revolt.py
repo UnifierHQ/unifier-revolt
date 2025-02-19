@@ -1442,7 +1442,8 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     return await ctx.send('Invalid user/server!')
             if userid in self.bot.moderators:
                 return await ctx.send(
-                    'UniChat moderators are immune to blocks!\n(Though, do feel free to report anyone who abuses this immunity.)')
+                    'Unifier moderators are immune to blocks!\n(Though, do feel free to report anyone who abuses this immunity.)'
+                )
             banlist = []
             if f'{ctx.guild.id}' in list(self.bot.db['blocked'].keys()):
                 banlist = self.bot.db['blocked'][f'{ctx.guild.id}']
@@ -1474,6 +1475,157 @@ class Revolt(commands.Cog,name='Revolt Support'):
             self.bot.db['blocked'][f'{ctx.guild.id}'].remove(userid)
             self.bot.db.save_data()
             await ctx.send('User/server can now forward messages to this channel!')
+
+        @moderation.command(name='under-attack')
+        async def under_attack(self, ctx):
+            """Toggles Under Attack mode."""
+
+            if f'{ctx.server.id}' in self.bot.db['underattack']:
+                if not ctx.author.get_permissions().manage_channel:
+                    return await ctx.send('You do not have permissions to run this command.')
+
+                embed = Embed(
+                    title='Disable Under Attack mode?',
+                    description=(
+                        'Users will be able to send messages in Unifier rooms again. Only disable this mode if '+
+                        'you\'re absolutely sure your server is in the clear.'
+                    ),
+                    color=self.bot.colors.warning
+                )
+            else:
+                if not ctx.author.get_permissions().kick_members and not ctx.author.get_permissions().ban_members:
+                    return await ctx.send('You do not have permissions to run this command.')
+
+                embed = Embed(
+                    title='Enable Under Attack mode?',
+                    description=(
+                        'Users will not be able to send messages in Unifier rooms. Only enable this mode if your '+
+                        'server is under attack or is likely to be attacked.\n\n' +
+                        '**WARNING**: You will not be able to disable this mode without the Manage Channels permission.'
+                    ),
+                    color=self.bot.colors.warning
+                )
+
+            msg = await ctx.send(embed=embed, interactions=revolt.MessageInteractions(
+                reactions=['\U00002705', '\U0000274C'], restrict_reactions=True
+            ))
+
+            def check(message, user, _emoji_id):
+                return message.id == msg.id and user.id == ctx.author.id
+
+            try:
+                _message, _user, emoji_id = await self.wait_for('reaction_add', check=check, timeout=60)
+            except:
+                return await msg.edit(content='Panel has expired.')
+
+            if emoji_id == '\U0000274C':
+                return await msg.edit(content='Aborted.')
+
+            was_attack = f'{ctx.server.id}' in self.bot.db['underattack']
+
+            if was_attack:
+                self.bot.db['underattack'].remove(f'{ctx.server.id}')
+            else:
+                self.bot.db['underattack'].append(f'{ctx.server.id}')
+
+            embed = Embed(
+                title=f'Under Attack mode ' + ('disabled' if was_attack else 'enabled'),
+                description=(
+                    'Under Attack mode is now disabled. Your members can now chat in Unifier rooms again.'
+                ) if was_attack else (
+                    'Under Attack mode is now enabled. Your members can no longer chat in Unifier rooms.'
+                ),
+                color=self.bot.colors.success
+            )
+
+            await msg.edit(embeds=[embed])
+
+        @moderation.command(name='auto-under-attack')
+        async def auto_under_attack(self, ctx):
+            """Toggles Automatic Under Attack mode."""
+
+            if not ctx.author.get_permissions().manage_channel:
+                return await ctx.send('You do not have permissions to run this command.')
+
+            if f'{ctx.server.id}' in self.bot.db['automatic_uam']:
+                embed = Embed(
+                    title='Disable Automatic Under Attack mode?',
+                    description='Under Attack mode will not be enabled automatically.',
+                    color=self.bot.colors.warning
+                )
+            else:
+                embed = Embed(
+                    title='Enable Automatic Under Attack mode?',
+                    description=(
+                        'If too many Filters are triggered at a time, Under Attack mode will be enabled automatically.'+
+                        '\n\nPlease note that only certain Filters will contribute to the trigger count.'
+                    ),
+                    color=self.bot.colors.warning
+                )
+
+            msg = await ctx.send(embed=embed, interactions=revolt.MessageInteractions(
+                reactions=['\U00002705', '\U0000274C'], restrict_reactions=True
+            ))
+
+            def check(message, user, _emoji_id):
+                return message.id == msg.id and user.id == ctx.author.id
+
+            try:
+                _message, _user, emoji_id = await self.wait_for('reaction_add', check=check, timeout=60)
+            except:
+                return await msg.edit(content='Panel has expired.')
+
+            if emoji_id == '\U0000274C':
+                return await msg.edit(content='Aborted.')
+
+            was_attack = f'{ctx.server.id}' in self.bot.db['automatic_uam']
+
+            if was_attack:
+                self.bot.db['automatic_uam'].remove(f'{ctx.server.id}')
+            else:
+                self.bot.db['automatic_uam'].append(f'{ctx.server.id}')
+
+            embed = Embed(
+                title=f'Automatic Under Attack mode ' + ('disabled' if was_attack else 'enabled'),
+                description=f'Automatic Under Attack mode is now ' + ('disabled' if was_attack else 'enabled') + '.',
+                color=self.bot.colors.success
+            )
+
+            await msg.edit(embeds=[embed])
+
+        @moderation.command(name='filter-threshold')
+        async def filter_threshold(self, ctx, threshold: Optional[int] = None):
+            """Configures the Filter trigger threshold at which auto UAM activates."""
+
+            if not ctx.author.get_permissions().manage_channel:
+                return await ctx.send('You do not have permissions to run this command.')
+
+            if not f'{ctx.guild.id}' in self.bot.db['automatic_uam']:
+                embed = Embed(
+                    title='Auto Under Attack mode is disabled',
+                    description='You need to enable this first to view and edit the threshold.',
+                    color=self.bot.colors.warning
+                )
+            else:
+                embed = nextcord.Embed(
+                    title='Filter trigger threshold',
+                    description=(
+                        f'Current threshold: `{self.bot.db["filter_threshold"]}`\n'+
+                        'UAM will activate if the threshold is reached within a minute.'
+                    ),
+                    color=self.bot.colors.unifier
+                )
+
+            if threshold is not None and not f'{ctx.guild.id}' in self.bot.db['automatic_uam']:
+                return await ctx.send('Auto Under Attack mode is disabled. Enable it first.')
+            elif threshold is not None:
+                if threshold < 0:
+                    return await ctx.send('Threshold must be 0 or higher.')
+
+                self.bot.db['filter_threshold'].update({str(ctx.guild.id): threshold})
+                return await ctx.send(f'Threshold has been set to `{threshold}`.')
+            else:
+                await ctx.send(embed=embed)
 
         async def roomlist(self, ctx, index, private=False):
             try:
