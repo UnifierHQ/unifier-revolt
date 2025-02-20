@@ -343,10 +343,6 @@ class RevoltPlatform(platform_base.PlatformBase):
 
         # Convert spoilers to Discord format
         components = text.split('!!')
-        for component in components:
-            if len(component) == 0:
-                components.remove(component)
-
         to_replace = (len(components) - 1) - ((len(components) - 1) % 2)
         text = text.replace('!!', '||', to_replace)
 
@@ -446,10 +442,6 @@ class RevoltPlatform(platform_base.PlatformBase):
 
                 # Convert spoilers to Revolt format
                 components = content.split('||')
-                for component in components:
-                    if len(component) == 0:
-                        components.remove(component)
-
                 to_replace = (len(components) - 1) - ((len(components) - 1) % 2)
                 content = content.replace('||', '!!', to_replace)
 
