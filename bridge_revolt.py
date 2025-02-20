@@ -596,7 +596,10 @@ class Revolt(commands.Cog,name='Revolt Support'):
 
             msgdata = await self.bot.bridge.fetch_message(message.id)
 
-            await self.bot.bridge.edit(msgdata.id, message.content, source='revolt')
+            try:
+                await self.bot.bridge.edit(msgdata.id, message.content, message, source='revolt')
+            except:
+                await self.bot.bridge.edit(msgdata.id, message.content, source='revolt')
 
         async def on_message_delete(self, message):
             roomname = None
