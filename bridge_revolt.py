@@ -1480,6 +1480,9 @@ class Revolt(commands.Cog,name='Revolt Support'):
         async def under_attack(self, ctx):
             """Toggles Under Attack mode."""
 
+            if not 'underattack' in self.bot.db.keys():
+                return await ctx.send('This Unifier instance doesn\'t support Under Attack mode.')
+
             if f'{ctx.server.id}' in self.bot.db['underattack']:
                 if not ctx.author.get_permissions().manage_channel:
                     return await ctx.send('You do not have permissions to run this command.')
@@ -1544,6 +1547,9 @@ class Revolt(commands.Cog,name='Revolt Support'):
         async def auto_under_attack(self, ctx):
             """Toggles Automatic Under Attack mode."""
 
+            if not 'underattack' in self.bot.db.keys():
+                return await ctx.send('This Unifier instance doesn\'t support Under Attack mode.')
+
             if not ctx.author.get_permissions().manage_channel:
                 return await ctx.send('You do not have permissions to run this command.')
 
@@ -1596,6 +1602,9 @@ class Revolt(commands.Cog,name='Revolt Support'):
         @moderation.command(name='filter-threshold')
         async def filter_threshold(self, ctx, threshold: Optional[int] = None):
             """Configures the Filter trigger threshold at which auto UAM activates."""
+
+            if not 'underattack' in self.bot.db.keys():
+                return await ctx.send('This Unifier instance doesn\'t support Under Attack mode.')
 
             if not ctx.author.get_permissions().manage_channel:
                 return await ctx.send('You do not have permissions to run this command.')
