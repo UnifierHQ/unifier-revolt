@@ -483,7 +483,20 @@ class RevoltPlatform(platform_base.PlatformBase):
                     raise
         return msg
 
-    async def edit(self, message, content, special: dict = None):
+    async def edit(self, message, content, source: str = 'discord', special: dict = None):
+        if source == 'discord':
+            newlines = []
+            for line in content.split('\n'):
+                if line.startswith('-# '):
+                    line = line.replace('-# ', '##### ', 1)
+                newlines.append(line)
+            content = '\n'.join(newlines)
+
+            # Convert spoilers to Revolt format
+            components = content.split('||')
+            to_replace = (len(components) - 1) - ((len(components) - 1) % 2)
+            content = content.replace('||', '!!', to_replace)
+
         if not special:
             await message.edit(
                 content=content
