@@ -237,6 +237,24 @@ class RevoltPlatform(platform_base.PlatformBase):
             converted.append(embed)
         return converted
 
+    def remove_spoilers(self, content):
+        split_content = content.split('!!')
+        to_merge = []
+
+        # This must be 3 or higher
+        if len(split_content) >= 3:
+            to_merge.append(split_content.pop(0))
+
+            while len(split_content) > 0:
+                if len(split_content) >= 2:
+                    split_content.pop(0)
+                    to_merge.append('■■■■■■')
+                to_merge.append(split_content.pop(0))
+
+            return ''.join(to_merge)
+        else:
+            return content
+
     async def fetch_server(self, server_id):
         return await self.bot.fetch_server(server_id)
 
