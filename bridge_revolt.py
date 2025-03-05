@@ -368,34 +368,15 @@ class Revolt(commands.Cog,name='Revolt Support'):
             if not roomname or is_dm:
                 return
 
-            try:
-                pr_roomname = self.bot.config['posts_room']
-            except:
-                pr_roomname = self.bot.db['rooms'][list(self.bot.db['rooms'].keys())[self.bot.config['pr_room_index']]]
-            try:
-                pr_ref_roomname = self.bot.config['posts_ref_room']
-            except:
-                pr_ref_roomname = self.bot.db['rooms'][
-                    list(self.bot.db['rooms'].keys())[self.bot.config['pr_ref_room_index']]]
-
-            is_pr = roomname == pr_roomname and (
-                self.bot.config['allow_prs'] if 'allow_prs' in list(self.bot.config.keys()) else False or
-                self.bot.config['allow_posts'] if 'allow_posts' in list(self.bot.config.keys()) else False
-            )
-            is_pr_ref = roomname == pr_ref_roomname and (
-                self.bot.config['allow_prs'] if 'allow_prs' in list(self.bot.config.keys()) else False or
-                self.bot.config['allow_posts'] if 'allow_posts' in list(self.bot.config.keys()) else False
-            )
-
             should_delete = False
             emojified = False
 
-            if '[emoji:' in message.content or is_pr or is_pr_ref:
+            if '[emoji:' in message.content:
                 emojified = True
                 should_delete = True
 
             if not message.server.get_member(self.user.id).get_channel_permissions(message.channel).manage_messages:
-                if emojified or is_pr_ref:
+                if emojified:
                     return await message.channel.send(
                         'Parent message could not be deleted. I may be missing the `Manage Messages` permission.'
                     )
@@ -419,22 +400,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     elif parts[0].lower() in list(self.bot.bridge.prs.keys()):
                         multisend = False
 
-            pr_roomname = self.bot.config['posts_room']
-            pr_ref_roomname = self.bot.config['posts_ref_room']
-            is_pr = roomname == pr_roomname and (
-                self.bot.config['allow_prs'] if 'allow_prs' in list(self.bot.config.keys()) else False or
-                self.bot.config['allow_posts'] if 'allow_posts' in list(self.bot.config.keys()) else False
-            )
-            is_pr_ref = roomname == pr_ref_roomname and (
-                self.bot.config['allow_prs'] if 'allow_prs' in list(self.bot.config.keys()) else False or
-                self.bot.config['allow_posts'] if 'allow_posts' in list(self.bot.config.keys()) else False
-            )
-
             should_resend = False
-
-            if is_pr or is_pr_ref:
-                multisend = False
-                should_resend = True
 
             if multisend:
                 # Multisend
