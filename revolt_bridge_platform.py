@@ -89,6 +89,7 @@ class RevoltPlatform(platform_base.PlatformBase):
         super().__init__(*args, **kwargs)
         self.files_per_guild = True
         self.filesize_limit = 20000000
+        self.supports_agegate = True
 
     def bot_id(self):
         return self.bot.user.id
@@ -117,6 +118,9 @@ class RevoltPlatform(platform_base.PlatformBase):
 
     def channel(self, message: revolt.Message):
         return message.channel
+
+    def is_nsfw(self, obj):
+        return obj.nsfw
 
     def server(self, obj):
         return obj.server
