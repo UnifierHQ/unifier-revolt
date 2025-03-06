@@ -224,6 +224,11 @@ class RevoltPlatform(platform_base.PlatformBase):
             if embeds[i].footer:
                 embed.set_footer(text=embeds[i].footer.text)
 
+            if embeds[i].author and not embeds[i].title:
+                embed.title = embeds[i].author.name
+                embed.icon_url = embeds[i].author.icon_url
+                embed.url = embeds[i].author.url
+
             converted.append(embed)
         return converted
 
