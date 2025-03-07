@@ -89,6 +89,7 @@ class RevoltPlatform(platform_base.PlatformBase):
         super().__init__(*args, **kwargs)
         self.files_per_guild = True
         self.filesize_limit = 20000000
+        self.supports_agegate = True
 
     def bot_id(self):
         return self.bot.user.id
@@ -117,6 +118,9 @@ class RevoltPlatform(platform_base.PlatformBase):
 
     def channel(self, message: revolt.Message):
         return message.channel
+
+    def is_nsfw(self, obj):
+        return obj.nsfw
 
     def server(self, obj):
         return obj.server
@@ -220,6 +224,11 @@ class RevoltPlatform(platform_base.PlatformBase):
             if embeds[i].footer:
                 embed.set_footer(text=embeds[i].footer.text)
 
+            if embeds[i].author and not embeds[i].title:
+                embed.title = embeds[i].author.name
+                embed.icon_url = embeds[i].author.icon_url
+                embed.url = embeds[i].author.url
+
             converted.append(embed)
         return converted
 
@@ -236,6 +245,24 @@ class RevoltPlatform(platform_base.PlatformBase):
 
             converted.append(embed)
         return converted
+
+    def remove_spoilers(self, content):
+        split_content = content.split('!!')
+        to_merge = []
+
+        # This must be 3 or higher
+        if len(split_content) >= 3:
+            to_merge.append(split_content.pop(0))
+
+            while len(split_content) > 0:
+                if len(split_content) >= 2:
+                    split_content.pop(0)
+                    to_merge.append('■■■■■■')
+                to_merge.append(split_content.pop(0))
+
+            return ''.join(to_merge)
+        else:
+            return content
 
     async def fetch_server(self, server_id):
         return await self.bot.fetch_server(server_id)
@@ -465,7 +492,20 @@ class RevoltPlatform(platform_base.PlatformBase):
                     raise
         return msg
 
-    async def edit(self, message, content, special: dict = None):
+    async def edit(self, message, content, source: str = 'discord', special: dict = None):
+        if source == 'discord':
+            newlines = []
+            for line in content.split('\n'):
+                if line.startswith('-# '):
+                    line = line.replace('-# ', '##### ', 1)
+                newlines.append(line)
+            content = '\n'.join(newlines)
+
+            # Convert spoilers to Revolt format
+            components = content.split('||')
+            to_replace = (len(components) - 1) - ((len(components) - 1) % 2)
+            content = content.replace('||', '!!', to_replace)
+
         if not special:
             await message.edit(
                 content=content
