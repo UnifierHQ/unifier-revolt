@@ -23,7 +23,7 @@ from utils import platform_base
 import revolt
 import nextcord
 from io import BytesIO
-from typing import Union
+from typing import Union, Optional
 
 class EmbedField:
     def __init__(self, name, value):
@@ -388,11 +388,13 @@ class RevoltPlatform(platform_base.PlatformBase):
 
     async def send(self, channel, content, special: dict = None):
         persona = None
-        bucket = self.buckets.get(f'/channels/{channel.id}/messages')
+        bucket: Optional[platform_base.RateLimit] = None
+        if hasattr(self, 'buckets'):
+            bucket = self.buckets.get(f'/channels/{channel.id}/messages')
 
-        if not bucket:
-            bucket = platform_base.RateLimit(f'/channels/{channel.id}/messages', 10, 10)
-            self.buckets.update({f'/channels/{channel.id}/messages': bucket})
+            if not bucket:
+                bucket = platform_base.RateLimit(f'/channels/{channel.id}/messages', 10, 10)
+                self.buckets.update({f'/channels/{channel.id}/messages': bucket})
 
         def to_color(color):
             try:
@@ -425,14 +427,15 @@ class RevoltPlatform(platform_base.PlatformBase):
             if not me.get_permissions().manage_role:
                 persona.colour = None
         if not special:
-            await self.handle_ratelimit(bucket)
+            if hasattr(self, 'buckets'):
+                await self.handle_ratelimit(bucket)
 
             while True:
                 try:
                     msg = await channel.send(content)
                     break
                 except revolt.errors.HTTPError as e:
-                    if '429' in str(e):
+                    if '429' in str(e) and hasattr(self, 'buckets'):
                         bucket.force_ratelimit()
                         await self.handle_ratelimit(bucket)
                     else:
@@ -491,7 +494,8 @@ class RevoltPlatform(platform_base.PlatformBase):
                 content = content.replace('||', '!!', to_replace)
 
             try:
-                await self.handle_ratelimit(bucket)
+                if hasattr(self, 'buckets'):
+                    await self.handle_ratelimit(bucket)
 
                 while True:
                     try:
@@ -504,7 +508,7 @@ class RevoltPlatform(platform_base.PlatformBase):
                         )
                         break
                     except revolt.errors.HTTPError as e:
-                        if '429' in str(e):
+                        if '429' in str(e) and hasattr(self, 'buckets'):
                             bucket.force_ratelimit()
                             await self.handle_ratelimit(bucket)
                         else:
@@ -513,7 +517,8 @@ class RevoltPlatform(platform_base.PlatformBase):
                         raise
             except Exception as e:
                 if str(e) == 'Expected object or value':
-                    await self.handle_ratelimit(bucket)
+                    if hasattr(self, 'buckets'):
+                        await self.handle_ratelimit(bucket)
 
                     while True:
                         try:
@@ -525,7 +530,7 @@ class RevoltPlatform(platform_base.PlatformBase):
                             )
                             break
                         except revolt.errors.HTTPError as e:
-                            if '429' in str(e):
+                            if '429' in str(e) and hasattr(self, 'buckets'):
                                 bucket.force_ratelimit()
                                 await self.handle_ratelimit(bucket)
                             else:
