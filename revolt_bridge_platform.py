@@ -386,6 +386,14 @@ class RevoltPlatform(platform_base.PlatformBase):
             f = file
         return revolt.File(f.fp.read(), filename=f.filename)
 
+    def file_name(self, attachment: revolt.Asset):
+        """Returns the filename of an attachment."""
+        return attachment.filename
+
+    def file_url(self, attachment: revolt.Asset):
+        """Returns the URL of an attachment."""
+        raise attachment.url
+
     async def send(self, channel, content, special: dict = None):
         persona = None
         bucket_type = None
