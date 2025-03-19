@@ -388,6 +388,11 @@ class RevoltPlatform(platform_base.PlatformBase):
 
     async def send(self, channel, content, special: dict = None):
         persona = None
+        bucket = self.buckets.get(f'/channels/{channel.id}/messages')
+
+        if not bucket:
+            bucket = platform_base.RateLimit(f'/channels/{channel.id}/messages', 10, 10)
+            self.buckets.update({f'/channels/{channel.id}/messages': bucket})
 
         def to_color(color):
             try:
@@ -420,7 +425,20 @@ class RevoltPlatform(platform_base.PlatformBase):
             if not me.get_permissions().manage_role:
                 persona.colour = None
         if not special:
-            msg = await channel.send(content)
+            await self.handle_ratelimit(bucket)
+
+            while True:
+                try:
+                    msg = await channel.send(content)
+                    break
+                except revolt.errors.HTTPError as e:
+                    if '429' in str(e):
+                        bucket.force_ratelimit()
+                        await self.handle_ratelimit(bucket)
+                    else:
+                        raise
+                except:
+                    raise
         else:
             reply_id = None
             reply = special.get('reply', None)
@@ -473,21 +491,47 @@ class RevoltPlatform(platform_base.PlatformBase):
                 content = content.replace('||', '!!', to_replace)
 
             try:
-                msg = await channel.send(
-                    content,
-                    embeds=special['embeds'] if 'embeds' in special.keys() else None,
-                    attachments=special['files'] if 'files' in special.keys() else None,
-                    reply=revolt.MessageReply(reply_msg) if reply_id else None,
-                    masquerade=persona
-                )
+                await self.handle_ratelimit(bucket)
+
+                while True:
+                    try:
+                        msg = await channel.send(
+                            content,
+                            embeds=special['embeds'] if 'embeds' in special.keys() else None,
+                            attachments=special['files'] if 'files' in special.keys() else None,
+                            reply=revolt.MessageReply(reply_msg) if reply_id else None,
+                            masquerade=persona
+                        )
+                        break
+                    except revolt.errors.HTTPError as e:
+                        if '429' in str(e):
+                            bucket.force_ratelimit()
+                            await self.handle_ratelimit(bucket)
+                        else:
+                            raise
+                    except:
+                        raise
             except Exception as e:
                 if str(e) == 'Expected object or value':
-                    msg = await channel.send(
-                        content,
-                        embeds=special['embeds'] if 'embeds' in special.keys() else None,
-                        reply=revolt.MessageReply(reply_msg) if reply_id else None,
-                        masquerade=persona
-                    )
+                    await self.handle_ratelimit(bucket)
+
+                    while True:
+                        try:
+                            msg = await channel.send(
+                                content,
+                                embeds=special['embeds'] if 'embeds' in special.keys() else None,
+                                reply=revolt.MessageReply(reply_msg) if reply_id else None,
+                                masquerade=persona
+                            )
+                            break
+                        except revolt.errors.HTTPError as e:
+                            if '429' in str(e):
+                                bucket.force_ratelimit()
+                                await self.handle_ratelimit(bucket)
+                            else:
+                                raise
+                        except:
+                            raise
                 else:
                     raise
         return msg
