@@ -392,7 +392,7 @@ class RevoltPlatform(platform_base.PlatformBase):
 
     def file_url(self, attachment: revolt.Asset):
         """Returns the URL of an attachment."""
-        raise attachment.url
+        return attachment.url
 
     async def send(self, channel, content, special: dict = None):
         persona = None
