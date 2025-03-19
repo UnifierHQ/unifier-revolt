@@ -388,7 +388,12 @@ class RevoltPlatform(platform_base.PlatformBase):
 
     async def send(self, channel, content, special: dict = None):
         persona = None
-        bucket: Optional[platform_base.RateLimit] = None
+        bucket_type = None
+
+        if hasattr(self, 'buckets'):
+            bucket_type = platform_base.RateLimit
+
+        bucket: Optional[bucket_type] = None
         if hasattr(self, 'buckets'):
             bucket = self.buckets.get(f'/channels/{channel.id}/messages')
 
