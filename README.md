@@ -14,7 +14,7 @@ instance and allows messages from Revolt to be bridged to other platforms.
 Unifier v2.0.5 or newer is required.
 
 ## Setup
-To install Unifier Revolt Support, you can run `u!install https://github.com/UnifierHQ/unifier-revolt` on the bot.
+To install Unifier Revolt Support, you can run `u!system install https://github.com/UnifierHQ/unifier-revolt` on the bot.
 This will install the plugin through System Manager.
 
 > [!NOTE]
