@@ -1739,7 +1739,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             await ctx.send(
                 f'Sent by @{username} ({msg_obj.author_id}) in {guildname} ({msg_obj.guild_id}, {msg_obj.source})\n\nParent ID: {msg_obj.id}')
 
-        @rv_commands.command()
+        @config.command()
         async def addmod(self, ctx, *, userid):
             """Adds a moderator to the instance."""
             if not ctx.author.id in self.bot.admins:
@@ -1778,7 +1778,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             await self.bot.loop.run_in_executor(None, lambda: self.bot.db.save_data())
             await ctx.send(f'**{user.name}#{user.discriminator}** is now a moderator!')
 
-        @rv_commands.command(aliases=['remmod', 'delmod', 'removemod'])
+        @config.command(aliases=['remmod', 'delmod', 'removemod'])
         async def delmod(self, ctx, *, userid):
             """Removes a moderator from the instance."""
             if not ctx.author.id in self.bot.admins:
@@ -2122,7 +2122,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
                     self.logger.error('Couldn\'t sleep, exiting loop...')
                     break
 
-    @commands.command(name='stop-revolt', hidden=True)
+    @commands.command(name='stop-revolt')
     @restrictions_legacy.owner()
     async def stop_revolt(self, ctx):
         """Kills the Revolt client. This is automatically done when upgrading Unifier."""
@@ -2138,7 +2138,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             self.logger.exception('Something went wrong!')
             await ctx.send('Something went wrong while killing the instance.')
 
-    @commands.command(name='restart-revolt', hidden=True)
+    @commands.command(name='restart-revolt')
     @restrictions_legacy.owner()
     async def restart_revolt(self, ctx):
         """Restarts the Revolt client."""
@@ -2154,25 +2154,10 @@ class Revolt(commands.Cog,name='Revolt Support'):
             self.logger.exception('Something went wrong!')
             await ctx.send('Something went wrong while restarting the instance.')
 
-    @commands.command(name='fix-revolt', hidden=True)
+    @commands.command(name='fix-revolt')
     @restrictions_legacy.owner()
     async def fix_revolt(self, ctx):
-        """Revolt.py has been fixed, there's no reason to use this."""
-        embed = nextcord.Embed(
-            title='Revolt.py has been fixed!',
-            description=(
-                'Our [pull request](https://github.com/revoltchat/revolt.py/pull/89) was merged to the main '+
-                'repository, meaning you don\'t need to use our patched version anymore.\n\n'+
-                f'To switch back to the upstream version, run `{self.bot.command_prefix}rollback-revolt`.'
-            ),
-            color=self.bot.colors.success
-        )
-        await ctx.send(embed=embed)
-
-    @commands.command(name='rollback-revolt', hidden=True)
-    @restrictions_legacy.owner()
-    async def rollback_revolt(self, ctx):
-        """Switches back to using the upstream version of Revolt.py."""
+        """Installs patched version of Revolt.py."""
         with open('boot_config.json') as file:
             boot_config = json.load(file)
 
@@ -2185,7 +2170,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             else:
                 binary = 'python3'
 
-        msg = await ctx.send(f'{self.bot.ui_emojis.loading} Reverting...')
+        msg = await ctx.send(f'{self.bot.ui_emojis.loading} Installing patched version...')
 
         # Attempt to purge cache, it's ok if this fails
         await self.bot.loop.run_in_executor(None, lambda: os.system(f'{binary} -m pip cache purge'))
@@ -2193,14 +2178,14 @@ class Revolt(commands.Cog,name='Revolt Support'):
         # Attempt to install
         code = await self.bot.loop.run_in_executor(
             None, lambda: os.system(
-                f'{binary} -m pip install{user_option} --force https://github.com/revoltchat/revolt.py/archive/refs/heads/master.zip'
+                f'{binary} -m pip install{user_option} --force https://github.com/greeeen-dev/revolt.py/archive/refs/heads/master.zip'
             )
         )
 
         if code > 0:
-            await msg.edit(content=f'{self.bot.ui_emojis.error} Could not install the main version.')
+            await msg.edit(content=f'{self.bot.ui_emojis.error} Could not install patched version.')
         else:
-            await msg.edit(content=f'{self.bot.ui_emojis.success} Installed main version! Please reboot the bot.')
+            await msg.edit(content=f'{self.bot.ui_emojis.success} Installed patched version! Please reboot the bot.')
 
 def setup(bot, tokenstore=None):
     global cog_tokenstore
