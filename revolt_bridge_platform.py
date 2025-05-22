@@ -273,7 +273,7 @@ class RevoltPlatform(platform_base.PlatformBase):
     async def fetch_message(self, channel, message_id):
         return await channel.fetch_message(message_id)
 
-    async def make_friendly(self, text):
+    async def make_friendly(self, text, **kwargs):
         # Convert emojis to a URL, if there's only one emoji in the message
         if text.startswith(':') and text.endswith(':'):
             try:
