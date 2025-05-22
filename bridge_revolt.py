@@ -1750,26 +1750,7 @@ class Revolt(commands.Cog,name='Revolt Support'):
             except:
                 user = None
             if not user:
-                embed = Embed(
-                    title=f'{self.user.display_name or self.user.name} help',
-                    color=self.bot.colors.unifier
-                )
-                cmdname = "addmod"
-                command_focus = self.bot.get_command(cmdname)
-
-                embed.title += f' / {cmdname}'
-                embed.description = (
-                    f'# `{self.bot.command_prefix}{cmdname}`\n'+
-                    f'{getattr(command_focus, "description", "No description provided")}'
-                )
-                if command_focus.aliases:
-                    embed.add_field(
-                        name='Aliases',
-                        value='\n'.join([f'`{self.bot.command_prefix}{alias}`' for alias in command_focus.aliases])
-                    )
-                embed.add_field(name='Usage', value=f'`{self.bot.command_prefix}addmod`')
-                return await ctx.send(
-                    ':x: `user` is a required argument and must be valid.', embed=embed)
+                return await ctx.send(':x: `user` is a required argument and must be valid.')
             if userid in self.bot.db['moderators']:
                 return await ctx.send('This user is already a moderator.')
             if userid in self.bot.admins or user.bot:
