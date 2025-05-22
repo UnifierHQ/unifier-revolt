@@ -2159,11 +2159,11 @@ class Revolt(commands.Cog,name='Revolt Support'):
         # Attempt to install
         code = await self.bot.loop.run_in_executor(
             None, lambda: os.system(
-                f'{binary} -m pip install{user_option} --force https://github.com/greeeen-dev/revolt.py/archive/refs/heads/master.zip'
+                f'{binary} -m pip install{user_option} --force git+https://github.com/UnifierHQ/univolt.git'
             )
         )
 
-        if code > 0:
+        if code != 0:
             await msg.edit(content=f'{self.bot.ui_emojis.error} Could not install patched version.')
         else:
             await msg.edit(content=f'{self.bot.ui_emojis.success} Installed patched version! Please reboot the bot.')
